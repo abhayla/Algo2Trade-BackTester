@@ -48,11 +48,21 @@ Module ExcelModifier
                 Dim totalPump As Decimal = 0
                 Dim drawUp As Decimal = 0
                 Dim drawDown As Decimal = 0
+                Dim maxDrawUp As Decimal = Decimal.MinValue
+                Dim minDrawDown As Decimal = Decimal.MaxValue
+                Dim totalDays As Integer = 0
+                Dim totalWinningDays As Integer = 0
+                Dim totalLossDays As Integer = 0
                 For i As Integer = 2 To dayPivotData.GetLength(0) - 2 Step 1
                     Console.WriteLine(String.Format("Writing for day {0} of {1}", i - 1, dayPivotData.GetLength(0) - 3))
                     Dim runningDate As Date = Date.FromOADate(dayPivotData(i, 1))
                     Dim totalPLOfTheDay As Decimal = dayPivotData(i, 2)
-
+                    totalDays += 1
+                    If totalPLOfTheDay > 0 Then
+                        totalWinningDays += 1
+                    Else
+                        totalLossDays += 1
+                    End If
                     If totalPLOfTheDay > 0 Then
                         drawUp += totalPLOfTheDay
                         If drawDown < 0 Then
@@ -113,6 +123,8 @@ Module ExcelModifier
                         End If
                     Next
                     availableCapital = effectiveCapital
+                    maxDrawUp = Math.Max(maxDrawUp, drawUp)
+                    minDrawDown = Math.Min(minDrawDown, drawDown)
                 Next
 
                 excelWriter.SetActiveSheet("Summary")
@@ -135,6 +147,18 @@ Module ExcelModifier
                 Dim totalRI As Decimal = Math.Round(((totalWithdraw / (totalPump + initialCapital)) / totalMonth) * 100, 2)
                 excelWriter.SetData(9, 6, "Return Of Investment(Per Month)")
                 excelWriter.SetData(9, 7, String.Format("{0}%", totalRI), ExcelHelper.XLAlign.Right)
+
+                Dim n As Integer = 14
+                excelWriter.SetData(n + 1, 6, "Max DrawDown")
+                excelWriter.SetData(n + 1, 7, minDrawDown, "##,##,##0.00", ExcelHelper.XLAlign.Right)
+                excelWriter.SetData(n + 2, 6, "Max DrawUp")
+                excelWriter.SetData(n + 2, 7, maxDrawUp, "##,##,##0.00", ExcelHelper.XLAlign.Right)
+                excelWriter.SetData(n + 3, 6, "Total Days")
+                excelWriter.SetData(n + 3, 7, totalDays, "##,##,##0", ExcelHelper.XLAlign.Right)
+                excelWriter.SetData(n + 4, 6, "Total Winning Days")
+                excelWriter.SetData(n + 4, 7, totalWinningDays, "##,##,##0", ExcelHelper.XLAlign.Right)
+                excelWriter.SetData(n + 5, 6, "Total Losing Days")
+                excelWriter.SetData(n + 5, 7, totalLossDays, "##,##,##0", ExcelHelper.XLAlign.Right)
 
                 excelWriter.SetActiveSheet("Summary")
                 Console.WriteLine("Saving excel...")

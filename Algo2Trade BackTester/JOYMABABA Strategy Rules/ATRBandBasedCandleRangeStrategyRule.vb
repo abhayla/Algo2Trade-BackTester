@@ -8,7 +8,7 @@ Public Class ATRBandBasedCandleRangeStrategyRule
     Public QuantityFlag As Integer = 1
     Public MaxStoplossAmount As Decimal = 100
     Public FirstTradeTargetMultiplier As Decimal = 2
-    Public TargetMultiplierWithBuffer As Boolean = False
+    Public EarlyStoploss As Boolean = False
     Public ForwardTradeTargetMultiplier As Decimal = 3
     Public CapitalToBeUsed As Decimal = 20000
     Public CandleBasedEntry As Boolean = False
@@ -108,14 +108,17 @@ Public Class ATRBandBasedCandleRangeStrategyRule
                                 entryData.BuySignal = 1
                                 entryData.BuyEntry = potentialHighEntryPrice + highBuffer
                                 entryData.BuyStoploss = potentialLowEntryPrice - lowBuffer
+                                If EarlyStoploss Then
+                                    entryData.BuyStoploss = entryData.BuyStoploss + entryData.BuyStoploss * 20 / 100
+                                End If
                                 If Not firstTradeEnterd Then
-                                    If FirstTradeTargetMultiplier < 3 OrElse TargetMultiplierWithBuffer Then
+                                    If FirstTradeTargetMultiplier < 3 OrElse EarlyStoploss Then
                                         entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * FirstTradeTargetMultiplier
                                     Else
                                         entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                     End If
                                 Else
-                                    If TargetMultiplierWithBuffer Then
+                                    If EarlyStoploss Then
                                         entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * ForwardTradeTargetMultiplier
                                     Else
                                         entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
@@ -151,14 +154,17 @@ Public Class ATRBandBasedCandleRangeStrategyRule
                                 entryData.SellSignal = -1
                                 entryData.SellEntry = potentialLowEntryPrice - lowBuffer
                                 entryData.SellStoploss = potentialHighEntryPrice + highBuffer
+                                If EarlyStoploss Then
+                                    entryData.SellStoploss = entryData.SellStoploss - entryData.SellStoploss * 20 / 100
+                                End If
                                 If Not firstTradeEnterd Then
-                                    If FirstTradeTargetMultiplier < 3 OrElse TargetMultiplierWithBuffer Then
+                                    If FirstTradeTargetMultiplier < 3 OrElse EarlyStoploss Then
                                         entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * FirstTradeTargetMultiplier
                                     Else
                                         entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                     End If
                                 Else
-                                    If TargetMultiplierWithBuffer Then
+                                    If EarlyStoploss Then
                                         entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * ForwardTradeTargetMultiplier
                                     Else
                                         entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
@@ -195,14 +201,17 @@ Public Class ATRBandBasedCandleRangeStrategyRule
                                     entryData.BuySignal = 1
                                     entryData.BuyEntry = potentialHighEntryPrice + highBuffer
                                     entryData.BuyStoploss = potentialLowEntryPrice - lowBuffer
+                                    If EarlyStoploss Then
+                                        entryData.BuyStoploss = entryData.BuyStoploss + entryData.BuyStoploss * 20 / 100
+                                    End If
                                     If Not firstTradeEnterd Then
-                                        If FirstTradeTargetMultiplier < 3 OrElse TargetMultiplierWithBuffer Then
+                                        If FirstTradeTargetMultiplier < 3 OrElse EarlyStoploss Then
                                             entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * FirstTradeTargetMultiplier
                                         Else
                                             entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                         End If
                                     Else
-                                        If TargetMultiplierWithBuffer Then
+                                        If EarlyStoploss Then
                                             entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * ForwardTradeTargetMultiplier
                                         Else
                                             entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
@@ -238,14 +247,17 @@ Public Class ATRBandBasedCandleRangeStrategyRule
                                     entryData.SellSignal = -1
                                     entryData.SellEntry = potentialLowEntryPrice - lowBuffer
                                     entryData.SellStoploss = potentialHighEntryPrice + highBuffer
+                                    If EarlyStoploss Then
+                                        entryData.SellStoploss = entryData.SellStoploss - entryData.SellStoploss * 20 / 100
+                                    End If
                                     If Not firstTradeEnterd Then
-                                        If FirstTradeTargetMultiplier < 3 OrElse TargetMultiplierWithBuffer Then
+                                        If FirstTradeTargetMultiplier < 3 OrElse EarlyStoploss Then
                                             entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * FirstTradeTargetMultiplier
                                         Else
                                             entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                         End If
                                     Else
-                                        If TargetMultiplierWithBuffer Then
+                                        If EarlyStoploss Then
                                             entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * ForwardTradeTargetMultiplier
                                         Else
                                             entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier

@@ -224,7 +224,7 @@ Public Class frm_BackTest
             If endDate.Date < tradeEndDate Then tradeEndDate = endDate
             For timeframe As Integer = 3 To 5 Step 2
                 For firstTradeMultiplier As Double = 3 To 3 Step 1
-                    For targetBuffer As Integer = 0 To 0 Step 1
+                    For earlySL As Integer = 0 To 1 Step 1
                         For trlng As Integer = 0 To 1 Step 1
                             For sameSideEntryAftrTrlng As Integer = 0 To 0 Step 1
                                 If trlng = 0 And sameSideEntryAftrTrlng = 1 Then Continue For
@@ -255,7 +255,7 @@ Public Class frm_BackTest
                                                 .QuantityFlag = 3
                                                 .MaxStoplossAmount = 1000
                                                 .FirstTradeTargetMultiplier = firstTradeMultiplier
-                                                .TargetMultiplierWithBuffer = targetBuffer
+                                                .EarlyStoploss = earlySL
                                                 .ForwardTradeTargetMultiplier = 3
                                                 .CapitalToBeUsed = 20000
                                                 .CandleBasedEntry = True

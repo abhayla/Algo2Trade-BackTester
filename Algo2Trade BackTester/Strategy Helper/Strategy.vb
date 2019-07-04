@@ -1430,26 +1430,12 @@ Public MustInherit Class Strategy
                         riskReward = Math.Round(Math.Abs((sumOfPositiveTrades / totalPositiveTrades) / (sumOfNegativeTrades / (totalTrades - totalPositiveTrades))), 2)
                     End If
 
-                    Dim maxDrawdown As Decimal = 0
-                    Dim tempMaxDrawdown As Decimal = 0
-                    For Each tempKeys In allTradesData.Keys
-                        Dim dayPL As Decimal = AllPLAfterBrokerage(tempKeys)
-                        If dayPL < 0 Then
-                            tempMaxDrawdown += dayPL
-                        Else
-                            maxDrawdown = Math.Min(maxDrawdown, tempMaxDrawdown)
-                            tempMaxDrawdown = 0
-                        End If
-                    Next
-                    maxDrawdown = Math.Min(maxDrawdown, tempMaxDrawdown)
-
                     Dim strategyOutputData As StrategyOutput = New StrategyOutput
                     With strategyOutputData
                         .WinRatio = winRatio
                         .NetProfit = sumOfPositiveTrades + sumOfNegativeTrades
                         .GrossProfit = sumOfPositiveTrades
                         .GrossLoss = sumOfNegativeTrades
-                        .MaxDrawdown = maxDrawdown
                         .TotalTrades = totalTrades
                         .TotalWinningTrades = totalPositiveTrades
                         .TotalLosingTrades = totalTrades - totalPositiveTrades
@@ -1848,14 +1834,13 @@ Public MustInherit Class Strategy
                         excelWriter.SetData(n + 12, 7, strategyOutputData.GrossProfit, "##,##,##0.00", ExcelHelper.XLAlign.Right)
                         excelWriter.SetData(n + 13, 6, "Gross Loss")
                         excelWriter.SetData(n + 13, 7, strategyOutputData.GrossLoss, "##,##,##0.00", ExcelHelper.XLAlign.Right)
-                        excelWriter.SetData(n + 14, 6, "Max Drawdown")
-                        excelWriter.SetData(n + 14, 7, strategyOutputData.MaxDrawdown, "##,##,##0.00", ExcelHelper.XLAlign.Right)
+                        n = 5
                         excelWriter.SetData(n + 15, 6, "Total Trades")
-                        excelWriter.SetData(n + 15, 7, strategyOutputData.TotalTrades, "##,##,##0.00", ExcelHelper.XLAlign.Right)
+                        excelWriter.SetData(n + 15, 7, strategyOutputData.TotalTrades, "##,##,##0", ExcelHelper.XLAlign.Right)
                         excelWriter.SetData(n + 16, 6, "Total Winning Trades")
-                        excelWriter.SetData(n + 16, 7, strategyOutputData.TotalWinningTrades, "##,##,##0.00", ExcelHelper.XLAlign.Right)
+                        excelWriter.SetData(n + 16, 7, strategyOutputData.TotalWinningTrades, "##,##,##0", ExcelHelper.XLAlign.Right)
                         excelWriter.SetData(n + 17, 6, "Total Losing Trades")
-                        excelWriter.SetData(n + 17, 7, strategyOutputData.TotalLosingTrades, "##,##,##0.00", ExcelHelper.XLAlign.Right)
+                        excelWriter.SetData(n + 17, 7, strategyOutputData.TotalLosingTrades, "##,##,##0", ExcelHelper.XLAlign.Right)
                         excelWriter.SetData(n + 18, 6, "Average Trades")
                         excelWriter.SetData(n + 18, 7, strategyOutputData.AverageTrades, "##,##,##0.00", ExcelHelper.XLAlign.Right)
                         excelWriter.SetData(n + 19, 6, "Average Winning Trades")
@@ -1887,8 +1872,8 @@ Public MustInherit Class Strategy
                     p.StartInfo = pi
                     p.Start()
 
-                    'If tradesFilename IsNot Nothing AndAlso File.Exists(tradesFilename) Then File.Delete(tradesFilename)
-                    'If capitalFileName IsNot Nothing AndAlso File.Exists(capitalFileName) Then File.Delete(capitalFileName)
+                    If tradesFilename IsNot Nothing AndAlso File.Exists(tradesFilename) Then File.Delete(tradesFilename)
+                    If capitalFileName IsNot Nothing AndAlso File.Exists(capitalFileName) Then File.Delete(capitalFileName)
                     Exit For
                 End If
             Catch ex As System.OutOfMemoryException

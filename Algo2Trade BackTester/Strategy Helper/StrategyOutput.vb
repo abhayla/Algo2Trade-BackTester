@@ -3,7 +3,6 @@
     Public Property NetProfit As Decimal
     Public Property GrossProfit As Decimal
     Public Property GrossLoss As Decimal
-    Public Property MaxDrawdown As Decimal
     Public Property TotalTrades As Integer
     Public Property TotalWinningTrades As Integer
     Public Property TotalLosingTrades As Integer

@@ -30,7 +30,7 @@ Public Class GenericStrategy
     Public MaxStoplossAmount As Decimal = 100
     Public StockFileName As String = Nothing
     Public FirstTradeTargetMultiplier As Decimal = 2
-    Public TargetMultiplierWithBuffer As Boolean = False
+    Public EarlyStoploss As Boolean = False
     Public ForwardTradeTargetMultiplier As Decimal = 3
     Public CapitalToBeUsed As Decimal = 20000
     Public CandleBasedEntry As Boolean = False
@@ -83,7 +83,7 @@ Public Class GenericStrategy
                                                Me.OverAllLossPerDay,
                                                Me.NumberOfTradePerStockPerDay,
                                                Me.FirstTradeTargetMultiplier,
-                                               Me.TargetMultiplierWithBuffer)
+                                               Me.EarlyStoploss)
 
         Dim tradesFileName As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.Trades.a2t", filename))
         Dim capitalFileName As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.Capital.a2t", filename))
@@ -237,7 +237,7 @@ Public Class GenericStrategy
                                         strategyBaseRule.QuantityFlag = Me.QuantityFlag
                                         strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
                                         strategyBaseRule.FirstTradeTargetMultiplier = Me.FirstTradeTargetMultiplier
-                                        strategyBaseRule.TargetMultiplierWithBuffer = Me.TargetMultiplierWithBuffer
+                                        strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
                                         strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
@@ -1066,7 +1066,7 @@ Public Class GenericStrategy
                 MaxStoplossAmount = Nothing
                 StockFileName = Nothing
                 FirstTradeTargetMultiplier = Nothing
-                TargetMultiplierWithBuffer = Nothing
+                EarlyStoploss = Nothing
                 ForwardTradeTargetMultiplier = Nothing
                 CapitalToBeUsed = Nothing
                 CandleBasedEntry = Nothing
