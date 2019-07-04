@@ -244,9 +244,9 @@ Public Class frm_BackTest
                                             AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
 
                                             With backtestStrategy
-                                                .InitialCapital = 500000
-                                                .CapitalForPumpIn = 400000
-                                                .MinimumEarnedCapitalToWithdraw = 600000
+                                                .InitialCapital = 300000
+                                                .CapitalForPumpIn = 200000
+                                                .MinimumEarnedCapitalToWithdraw = 400000
                                                 .AmountToBeWithdrawn = 100000
 
                                                 .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
