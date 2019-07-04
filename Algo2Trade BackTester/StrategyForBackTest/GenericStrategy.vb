@@ -75,7 +75,7 @@ Public Class GenericStrategy
 #Region "Test Strategy Normal"
     Public Overrides Async Function TestStrategyAsync(startDate As Date, endDate As Date) As Task
         Await Task.Delay(0).ConfigureAwait(False)
-        Dim filename As String = String.Format("TF {0},Trlg {1},Samesd {2},CtBrkevn {3},ML {4},Nmb {5},1TgMul {6},TgMulBf {7}",
+        Dim filename As String = String.Format("TF {0},Trlg {1},Samesd {2},CtBrkevn {3},ML {4},Nmb {5},1TgMul {6},ErlySL {7}",
                                                Me._SignalTimeFrame,
                                                Me.TrailingSL,
                                                Me.SameDirectionTradeAfterTrailingStoploss,
