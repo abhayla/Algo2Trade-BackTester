@@ -225,8 +225,8 @@ Public Class frm_BackTest
             For timeframe As Integer = 3 To 5 Step 2
                 For firstTradeMultiplier As Double = 3 To 3 Step 1
                     For targetBuffer As Integer = 0 To 0 Step 1
-                        For trlng As Integer = 1 To 1 Step 1
-                            For sameSideEntryAftrTrlng As Integer = 1 To 1 Step 1
+                        For trlng As Integer = 0 To 1 Step 1
+                            For sameSideEntryAftrTrlng As Integer = 0 To 0 Step 1
                                 If trlng = 0 And sameSideEntryAftrTrlng = 1 Then Continue For
                                 For countBreakevenTrades As Integer = 0 To 1 Step 1
                                     If trlng = 0 And countBreakevenTrades = 1 Then Continue For
