@@ -1826,15 +1826,16 @@ Public MustInherit Class Strategy
                         excelWriter.SetCellWidth(1, 6, 33)
                         excelWriter.SetCellWidth(1, 7, 15)
                         Dim n As Integer = 1
-                        excelWriter.SetData(n + 10, 6, "Win Ratio")
+                        excelWriter.SetData(n + 10, 6, "Trade Win Ratio")
                         excelWriter.SetData(n + 10, 7, strategyOutputData.WinRatio, "##,##,##0.00", ExcelHelper.XLAlign.Right)
+                        n = 2
                         excelWriter.SetData(n + 11, 6, "Net Profit")
                         excelWriter.SetData(n + 11, 7, strategyOutputData.NetProfit, "##,##,##0.00", ExcelHelper.XLAlign.Right)
                         excelWriter.SetData(n + 12, 6, "Gross Profit")
                         excelWriter.SetData(n + 12, 7, strategyOutputData.GrossProfit, "##,##,##0.00", ExcelHelper.XLAlign.Right)
                         excelWriter.SetData(n + 13, 6, "Gross Loss")
                         excelWriter.SetData(n + 13, 7, strategyOutputData.GrossLoss, "##,##,##0.00", ExcelHelper.XLAlign.Right)
-                        n = 5
+                        n = 6
                         excelWriter.SetData(n + 15, 6, "Total Trades")
                         excelWriter.SetData(n + 15, 7, strategyOutputData.TotalTrades, "##,##,##0", ExcelHelper.XLAlign.Right)
                         excelWriter.SetData(n + 16, 6, "Total Winning Trades")

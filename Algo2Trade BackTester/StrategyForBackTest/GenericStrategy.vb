@@ -22,7 +22,7 @@ Public Class GenericStrategy
     Public Property ExitOnOverAllFixedTargetStoploss As Boolean = False
     Public Property ModifyTarget As Boolean = False
     Public Property ModifyStoploss As Boolean = False
-    Public Property SameDirectionTradeAfterTrailingStoploss As Boolean = False
+    Public Property SameDirectionTrade As Boolean = False
     Public Property NIFTY50Stocks As String()
 
     'For ATR Based Candle Range Strategy
@@ -78,7 +78,7 @@ Public Class GenericStrategy
         Dim filename As String = String.Format("TF {0},Trlg {1},Samesd {2},CtBrkevn {3},ML {4},Nmb {5},1TgMul {6},ErlySL {7}",
                                                Me._SignalTimeFrame,
                                                Me.TrailingSL,
-                                               Me.SameDirectionTradeAfterTrailingStoploss,
+                                               Me.SameDirectionTrade,
                                                Me.CountTradesWithBreakevenMovement,
                                                Me.OverAllLossPerDay,
                                                Me.NumberOfTradePerStockPerDay,
@@ -306,44 +306,44 @@ Public Class GenericStrategy
                         End If
 
 #Region "Cleanup"
-                        'If XDayOneMinutePayload IsNot Nothing Then XDayOneMinutePayload.Clear()
-                        'If XDayXMinutePayload IsNot Nothing Then XDayXMinutePayload.Clear()
-                        'If XDayXMinuteHAPayload IsNot Nothing Then XDayXMinuteHAPayload.Clear()
-                        'If currentDayOneMinutePayload IsNot Nothing Then currentDayOneMinutePayload.Clear()
-                        'If XDayRuleSignalPayload IsNot Nothing Then XDayRuleSignalPayload.Clear()
-                        'XDayOneMinutePayload = Nothing
-                        'XDayXMinutePayload = Nothing
-                        'XDayXMinuteHAPayload = Nothing
-                        'currentDayOneMinutePayload = Nothing
-                        'XDayRuleSignalPayload = Nothing
+                        ''If XDayOneMinutePayload IsNot Nothing Then XDayOneMinutePayload.Clear()
+                        ''If XDayXMinutePayload IsNot Nothing Then XDayXMinutePayload.Clear()
+                        ''If XDayXMinuteHAPayload IsNot Nothing Then XDayXMinuteHAPayload.Clear()
+                        ''If currentDayOneMinutePayload IsNot Nothing Then currentDayOneMinutePayload.Clear()
+                        ''If XDayRuleSignalPayload IsNot Nothing Then XDayRuleSignalPayload.Clear()
+                        ''XDayOneMinutePayload = Nothing
+                        ''XDayXMinutePayload = Nothing
+                        ''XDayXMinuteHAPayload = Nothing
+                        ''currentDayOneMinutePayload = Nothing
+                        ''XDayRuleSignalPayload = Nothing
 
-                        If XDayRuleModifyStoplossPayload IsNot Nothing Then XDayRuleModifyStoplossPayload.Clear()
-                        If XDayRuleModifyTargetPayload IsNot Nothing Then XDayRuleModifyTargetPayload.Clear()
-                        If XDayRuleSupporting1Payload IsNot Nothing Then XDayRuleSupporting1Payload.Clear()
-                        If XDayRuleSupporting2Payload IsNot Nothing Then XDayRuleSupporting2Payload.Clear()
-                        If XDayRuleSupporting3Payload IsNot Nothing Then XDayRuleSupporting3Payload.Clear()
-                        If XDayRuleSupporting4Payload IsNot Nothing Then XDayRuleSupporting4Payload.Clear()
-                        If XDayRuleSupporting5Payload IsNot Nothing Then XDayRuleSupporting5Payload.Clear()
-                        If XDayRuleSupporting6Payload IsNot Nothing Then XDayRuleSupporting6Payload.Clear()
-                        If XDayRuleSupporting7Payload IsNot Nothing Then XDayRuleSupporting7Payload.Clear()
-                        If XDayRuleSupporting8Payload IsNot Nothing Then XDayRuleSupporting8Payload.Clear()
-                        If XDayRuleSupporting9Payload IsNot Nothing Then XDayRuleSupporting9Payload.Clear()
-                        If XDayRuleSupporting10Payload IsNot Nothing Then XDayRuleSupporting10Payload.Clear()
-                        If XDayRuleOutputPayload IsNot Nothing Then XDayRuleOutputPayload.Clear()
+                        'If XDayRuleModifyStoplossPayload IsNot Nothing Then XDayRuleModifyStoplossPayload.Clear()
+                        'If XDayRuleModifyTargetPayload IsNot Nothing Then XDayRuleModifyTargetPayload.Clear()
+                        'If XDayRuleSupporting1Payload IsNot Nothing Then XDayRuleSupporting1Payload.Clear()
+                        'If XDayRuleSupporting2Payload IsNot Nothing Then XDayRuleSupporting2Payload.Clear()
+                        'If XDayRuleSupporting3Payload IsNot Nothing Then XDayRuleSupporting3Payload.Clear()
+                        'If XDayRuleSupporting4Payload IsNot Nothing Then XDayRuleSupporting4Payload.Clear()
+                        'If XDayRuleSupporting5Payload IsNot Nothing Then XDayRuleSupporting5Payload.Clear()
+                        'If XDayRuleSupporting6Payload IsNot Nothing Then XDayRuleSupporting6Payload.Clear()
+                        'If XDayRuleSupporting7Payload IsNot Nothing Then XDayRuleSupporting7Payload.Clear()
+                        'If XDayRuleSupporting8Payload IsNot Nothing Then XDayRuleSupporting8Payload.Clear()
+                        'If XDayRuleSupporting9Payload IsNot Nothing Then XDayRuleSupporting9Payload.Clear()
+                        'If XDayRuleSupporting10Payload IsNot Nothing Then XDayRuleSupporting10Payload.Clear()
+                        'If XDayRuleOutputPayload IsNot Nothing Then XDayRuleOutputPayload.Clear()
 
-                        XDayRuleModifyStoplossPayload = Nothing
-                        XDayRuleModifyTargetPayload = Nothing
-                        XDayRuleSupporting1Payload = Nothing
-                        XDayRuleSupporting2Payload = Nothing
-                        XDayRuleSupporting3Payload = Nothing
-                        XDayRuleSupporting4Payload = Nothing
-                        XDayRuleSupporting5Payload = Nothing
-                        XDayRuleSupporting6Payload = Nothing
-                        XDayRuleSupporting7Payload = Nothing
-                        XDayRuleSupporting8Payload = Nothing
-                        XDayRuleSupporting9Payload = Nothing
-                        XDayRuleSupporting10Payload = Nothing
-                        XDayRuleOutputPayload = Nothing
+                        'XDayRuleModifyStoplossPayload = Nothing
+                        'XDayRuleModifyTargetPayload = Nothing
+                        'XDayRuleSupporting1Payload = Nothing
+                        'XDayRuleSupporting2Payload = Nothing
+                        'XDayRuleSupporting3Payload = Nothing
+                        'XDayRuleSupporting4Payload = Nothing
+                        'XDayRuleSupporting5Payload = Nothing
+                        'XDayRuleSupporting6Payload = Nothing
+                        'XDayRuleSupporting7Payload = Nothing
+                        'XDayRuleSupporting8Payload = Nothing
+                        'XDayRuleSupporting9Payload = Nothing
+                        'XDayRuleSupporting10Payload = Nothing
+                        'XDayRuleOutputPayload = Nothing
 #End Region
                     Next
 
@@ -806,7 +806,7 @@ Public Class GenericStrategy
                                                                 If IsAnyTradeOfTheStockTargetReached(currentMinuteCandlePayload, Trade.TradeType.MIS) Then
                                                                     CancelTrade(potentialEntryTrade, currentMinuteCandlePayload, "Previous Trade Target reached")
                                                                 Else
-                                                                    If SameDirectionTradeAfterTrailingStoploss Then
+                                                                    If SameDirectionTrade Then
                                                                         Dim lastTrade As Trade = GetLastExitTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                                                         If lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
                                                                             lastTrade.PLPoint > 0 AndAlso lastTrade.EntryDirection = potentialEntryTrade.EntryDirection Then
@@ -834,11 +834,17 @@ Public Class GenericStrategy
                                                                         End If
                                                                     Else
                                                                         Dim lastTrade As Trade = GetLastExitTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
+                                                                        'If lastTrade Is Nothing OrElse
+                                                                        '    (lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
+                                                                        '    lastTrade.PLPoint > 0 AndAlso lastTrade.EntryDirection <> potentialEntryTrade.EntryDirection) OrElse
+                                                                        '    (lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
+                                                                        '    lastTrade.PLPoint < 0) Then
+                                                                        '    If EnterTradeIfPossible(potentialEntryTrade, tick) Then
+                                                                        '        Console.WriteLine("")
+                                                                        '    End If
+                                                                        'End If
                                                                         If lastTrade Is Nothing OrElse
-                                                                            (lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
-                                                                            lastTrade.PLPoint > 0 AndAlso lastTrade.EntryDirection <> potentialEntryTrade.EntryDirection) OrElse
-                                                                            (lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
-                                                                            lastTrade.PLPoint < 0) Then
+                                                                            (lastTrade IsNot Nothing AndAlso lastTrade.EntryDirection <> potentialEntryTrade.EntryDirection) Then
                                                                             If EnterTradeIfPossible(potentialEntryTrade, tick) Then
                                                                                 Console.WriteLine("")
                                                                             End If
@@ -1060,7 +1066,7 @@ Public Class GenericStrategy
                 ExitOnOverAllFixedTargetStoploss = Nothing
                 ModifyTarget = Nothing
                 ModifyStoploss = Nothing
-                SameDirectionTradeAfterTrailingStoploss = Nothing
+                SameDirectionTrade = Nothing
                 NIFTY50Stocks = Nothing
                 QuantityFlag = Nothing
                 MaxStoplossAmount = Nothing

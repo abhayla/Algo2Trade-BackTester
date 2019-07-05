@@ -224,13 +224,13 @@ Public Class frm_BackTest
             If endDate.Date < tradeEndDate Then tradeEndDate = endDate
             For timeframe As Integer = 3 To 3 Step 2
                 For firstTradeMultiplier As Double = 3 To 3 Step 1
-                    For earlySL As Integer = 0 To 1 Step 1
-                        For trlng As Integer = 1 To 1 Step 1
-                            For sameSideEntryAftrTrlng As Integer = 0 To 0 Step 1
-                                If trlng = 0 And sameSideEntryAftrTrlng = 1 Then Continue For
-                                For countBreakevenTrades As Integer = 0 To 1 Step 1
-                                    If trlng = 0 And countBreakevenTrades = 1 Then Continue For
-                                    For overallLoss As Decimal = 20000 To 40000 Step 10000
+                    For trlng As Integer = 1 To 1 Step 1
+                        For smdirectiocEntry As Integer = 0 To 0 Step 1
+                            If trlng = 0 And smdirectiocEntry = 1 Then Continue For
+                            For countBreakevenTrades As Integer = 0 To 1 Step 1
+                                If trlng = 0 And countBreakevenTrades = 1 Then Continue For
+                                For overallLoss As Decimal = 20000 To 40000 Step 10000
+                                    For earlySL As Integer = 0 To 1 Step 1
                                         Using backtestStrategy As New GenericStrategy(canceller:=cts,
                                                                                         tickSize:=0.05,
                                                                                         eodExitTime:=TimeSpan.Parse("15:15:00"),
@@ -275,7 +275,7 @@ Public Class frm_BackTest
                                                 .NumberOfTradePerStockPerDay = 4
                                                 .CountTradesWithBreakevenMovement = countBreakevenTrades
                                                 .TrailingSL = trlng
-                                                .SameDirectionTradeAfterTrailingStoploss = sameSideEntryAftrTrlng
+                                                .SameDirectionTrade = smdirectiocEntry
                                                 .ReverseSignalTrade = True
                                                 .ModifyTarget = False
                                                 .ModifyStoploss = False

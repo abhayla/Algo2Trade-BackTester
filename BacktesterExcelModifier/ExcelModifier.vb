@@ -148,7 +148,7 @@ Module ExcelModifier
                 excelWriter.SetData(9, 6, "Return Of Investment(Per Month)")
                 excelWriter.SetData(9, 7, String.Format("{0}%", totalRI), ExcelHelper.XLAlign.Right)
 
-                Dim n As Integer = 14
+                Dim n As Integer = 15
                 excelWriter.SetData(n + 1, 6, "Max DrawDown")
                 excelWriter.SetData(n + 1, 7, minDrawDown, "##,##,##0.00", ExcelHelper.XLAlign.Right)
                 excelWriter.SetData(n + 2, 6, "Max DrawUp")
@@ -159,6 +159,9 @@ Module ExcelModifier
                 excelWriter.SetData(n + 4, 7, totalWinningDays, "##,##,##0", ExcelHelper.XLAlign.Right)
                 excelWriter.SetData(n + 5, 6, "Total Losing Days")
                 excelWriter.SetData(n + 5, 7, totalLossDays, "##,##,##0", ExcelHelper.XLAlign.Right)
+                n = 6
+                excelWriter.SetData(n + 6, 6, "Day Win Ratio")
+                excelWriter.SetData(n + 6, 7, Math.Round((totalWinningDays / totalDays) * 100, 2), "##,##,##0.00", ExcelHelper.XLAlign.Right)
 
                 excelWriter.SetActiveSheet("Summary")
                 Console.WriteLine("Saving excel...")

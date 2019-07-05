@@ -1,5 +1,6 @@
 ﻿Imports Algo2TradeBLL
 Imports System.Threading
+Imports Utilities.Numbers
 
 Public Class ATRBasedCandleRangeStrategyRule
     Inherits StrategyRule
@@ -104,20 +105,16 @@ Public Class ATRBasedCandleRangeStrategyRule
                                 entryData.BuyEntry = potentialHighEntryPrice + highBuffer
                                 entryData.BuyStoploss = potentialLowEntryPrice - lowBuffer
                                 If EarlyStoploss Then
-                                    entryData.BuyStoploss = entryData.BuyStoploss + entryData.BuyStoploss * 20 / 100
+                                    entryData.BuyStoploss = entryData.BuyStoploss + ConvertFloorCeling((entryData.BuyEntry - entryData.BuyStoploss) * 20 / 100, _tickSize, RoundOfType.Celing)
                                 End If
                                 If Not firstTradeEnterd Then
-                                    If FirstTradeTargetMultiplier < 3 OrElse EarlyStoploss Then
+                                    If FirstTradeTargetMultiplier < 3 Then
                                         entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * FirstTradeTargetMultiplier
                                     Else
                                         entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                     End If
                                 Else
-                                    If EarlyStoploss Then
-                                        entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * ForwardTradeTargetMultiplier
-                                    Else
-                                        entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
-                                    End If
+                                    entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
                                 End If
                                 If _stockType = Trade.TypeOfStock.Cash Then
                                     Select Case QuantityFlag
@@ -148,20 +145,16 @@ Public Class ATRBasedCandleRangeStrategyRule
                                 entryData.SellEntry = potentialLowEntryPrice - lowBuffer
                                 entryData.SellStoploss = potentialHighEntryPrice + highBuffer
                                 If EarlyStoploss Then
-                                    entryData.SellStoploss = entryData.SellStoploss - entryData.SellStoploss * 20 / 100
+                                    entryData.SellStoploss = entryData.SellStoploss - ConvertFloorCeling((entryData.SellStoploss - entryData.SellEntry) * 20 / 100, _tickSize, RoundOfType.Celing)
                                 End If
                                 If Not firstTradeEnterd Then
-                                    If FirstTradeTargetMultiplier < 3 OrElse EarlyStoploss Then
+                                    If FirstTradeTargetMultiplier < 3 Then
                                         entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * FirstTradeTargetMultiplier
                                     Else
                                         entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                     End If
                                 Else
-                                    If EarlyStoploss Then
-                                        entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * ForwardTradeTargetMultiplier
-                                    Else
-                                        entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
-                                    End If
+                                    entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
                                 End If
                                 If _stockType = Trade.TypeOfStock.Cash Then
                                     Select Case QuantityFlag
@@ -193,20 +186,16 @@ Public Class ATRBasedCandleRangeStrategyRule
                                     entryData.BuyEntry = potentialHighEntryPrice + highBuffer
                                     entryData.BuyStoploss = potentialLowEntryPrice - lowBuffer
                                     If EarlyStoploss Then
-                                        entryData.BuyStoploss = entryData.BuyStoploss + entryData.BuyStoploss * 20 / 100
+                                        entryData.BuyStoploss = entryData.BuyStoploss + ConvertFloorCeling((entryData.BuyEntry - entryData.BuyStoploss) * 20 / 100, _tickSize, RoundOfType.Celing)
                                     End If
                                     If Not firstTradeEnterd Then
-                                        If FirstTradeTargetMultiplier < 3 OrElse EarlyStoploss Then
+                                        If FirstTradeTargetMultiplier < 3 Then
                                             entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * FirstTradeTargetMultiplier
                                         Else
                                             entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                         End If
                                     Else
-                                        If EarlyStoploss Then
-                                            entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * ForwardTradeTargetMultiplier
-                                        Else
-                                            entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
-                                        End If
+                                        entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
                                     End If
                                     If _stockType = Trade.TypeOfStock.Cash Then
                                         Select Case QuantityFlag
@@ -237,20 +226,16 @@ Public Class ATRBasedCandleRangeStrategyRule
                                     entryData.SellEntry = potentialLowEntryPrice - lowBuffer
                                     entryData.SellStoploss = potentialHighEntryPrice + highBuffer
                                     If EarlyStoploss Then
-                                        entryData.SellStoploss = entryData.SellStoploss - entryData.SellStoploss * 20 / 100
+                                        entryData.SellStoploss = entryData.SellStoploss - ConvertFloorCeling((entryData.SellStoploss - entryData.SellEntry) * 20 / 100, _tickSize, RoundOfType.Celing)
                                     End If
                                     If Not firstTradeEnterd Then
-                                        If FirstTradeTargetMultiplier < 3 OrElse EarlyStoploss Then
+                                        If FirstTradeTargetMultiplier < 3 Then
                                             entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * FirstTradeTargetMultiplier
                                         Else
                                             entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                         End If
                                     Else
-                                        If EarlyStoploss Then
-                                            entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * ForwardTradeTargetMultiplier
-                                        Else
-                                            entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
-                                        End If
+                                        entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
                                     End If
                                     If _stockType = Trade.TypeOfStock.Cash Then
                                         Select Case QuantityFlag
