@@ -169,6 +169,7 @@ Public Class GenericStrategy
 
                     'First lets build the payload for all the stocks
                     Dim stockCount As Integer = 0
+                    Dim stockData As Dictionary(Of String, Dictionary(Of Date, Payload)) = Nothing
                     For Each stock In stockList.Keys
                         stockCount += 1
                         Dim XDayOneMinutePayload As Dictionary(Of Date, Payload) = Nothing
@@ -195,7 +196,16 @@ Public Class GenericStrategy
                         Dim XDayRuleSupporting10Payload As Dictionary(Of Date, String) = Nothing
                         Dim XDayRuleOutputPayload As Dictionary(Of String, Object) = Nothing
                         'Get payload
-                        XDayOneMinutePayload = Cmn.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                        If Data.PastIntradayData IsNot Nothing AndAlso Data.PastIntradayData.Count > 0 AndAlso
+                            Data.PastIntradayData.ContainsKey(tradeCheckingDate) AndAlso Data.PastIntradayData(tradeCheckingDate).ContainsKey(stock) Then
+                            XDayOneMinutePayload = Data.PastIntradayData(tradeCheckingDate)(stock)
+                        Else
+                            XDayOneMinutePayload = Cmn.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                            If XDayOneMinutePayload IsNot Nothing Then
+                                If stockData Is Nothing Then stockData = New Dictionary(Of String, Dictionary(Of Date, Payload))
+                                stockData.Add(stock, XDayOneMinutePayload)
+                            End If
+                        End If
 
                         'Now transfer only the current date payload into the workable payload (this will be used for the main loop and checking if the date is a valid date)
                         If XDayOneMinutePayload IsNot Nothing AndAlso XDayOneMinutePayload.Count > 0 Then
@@ -346,6 +356,10 @@ Public Class GenericStrategy
                         'XDayRuleOutputPayload = Nothing
 #End Region
                     Next
+                    If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                        If Data.PastIntradayData Is Nothing Then Data.PastIntradayData = New Dictionary(Of Date, Dictionary(Of String, Dictionary(Of Date, Payload)))
+                        Data.PastIntradayData.Add(tradeCheckingDate, stockData)
+                    End If
 
                     '------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -421,6 +435,11 @@ Public Class GenericStrategy
                                             numberOfExecutedTradePerStockPerDay = NumberOfTradesPerStockPerDay(currentMinuteCandlePayload.PayloadDate, currentMinuteCandlePayload.TradingSymbol)
                                         End If
                                     End If
+                                    'If currentMinuteCandlePayload IsNot Nothing AndAlso numberOfExecutedTradePerDay < NumberOfTradePerDay AndAlso Not _OverallMTMReached AndAlso
+                                    '    (_StockMTMReached Is Nothing OrElse (_StockMTMReached IsNot Nothing AndAlso _StockMTMReached.Count > 0 AndAlso
+                                    '    _StockMTMReached.ContainsKey(stockName) AndAlso Not _StockMTMReached(stockName))) AndAlso
+                                    '    (_StockTargetReached Is Nothing OrElse (_StockTargetReached IsNot Nothing AndAlso _StockTargetReached.Count > 0 AndAlso
+                                    '    _StockTargetReached.ContainsKey(stockName) AndAlso Not _StockTargetReached(stockName))) Then
                                     If currentMinuteCandlePayload IsNot Nothing AndAlso numberOfExecutedTradePerDay < NumberOfTradePerDay Then
                                         If currentMinuteCandlePayload IsNot Nothing AndAlso numberOfExecutedTradePerStockPerDay < NumberOfTradePerStockPerDay AndAlso
                                            XDayRuleSignalStocksPayload.ContainsKey(stockName) AndAlso
@@ -751,9 +770,7 @@ Public Class GenericStrategy
                                             Dim potentialExitTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Inprogress)
                                             If potentialExitTrades IsNot Nothing AndAlso potentialExitTrades.Count > 0 Then
                                                 For Each potentialExitTrade In potentialExitTrades
-                                                    If ExitTradeIfPossible(potentialExitTrade, tick) Then
-                                                        Console.WriteLine("")
-                                                    End If
+                                                    ExitTradeIfPossible(potentialExitTrade, tick)
                                                 Next
                                             End If
 
@@ -822,15 +839,11 @@ Public Class GenericStrategy
                                                                                                                     Math.Floor(currentMinuteCandlePayload.PayloadDate.Minute / _SignalTimeFrame) * _SignalTimeFrame, 0)
                                                                             If currentMinuteCandlePayload.PayloadDate >= exitMinuteBlock.AddMinutes(_SignalTimeFrame) Then
                                                                                 If IsAnyCandleClosesAboveOrBelow(currentMinuteBlock, exitMinuteBlock, XDayXMinuteStocksPayload(stockName), potentialEntryTrade) Then
-                                                                                    If EnterTradeIfPossible(potentialEntryTrade, tick) Then
-                                                                                        Console.WriteLine("")
-                                                                                    End If
+                                                                                    EnterTradeIfPossible(potentialEntryTrade, tick)
                                                                                 End If
                                                                             End If
                                                                         Else
-                                                                            If EnterTradeIfPossible(potentialEntryTrade, tick) Then
-                                                                                Console.WriteLine("")
-                                                                            End If
+                                                                            EnterTradeIfPossible(potentialEntryTrade, tick)
                                                                         End If
                                                                     Else
                                                                         Dim lastTrade As Trade = GetLastExitTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
@@ -845,9 +858,7 @@ Public Class GenericStrategy
                                                                         'End If
                                                                         If lastTrade Is Nothing OrElse
                                                                             (lastTrade IsNot Nothing AndAlso lastTrade.EntryDirection <> potentialEntryTrade.EntryDirection) Then
-                                                                            If EnterTradeIfPossible(potentialEntryTrade, tick) Then
-                                                                                Console.WriteLine("")
-                                                                            End If
+                                                                            EnterTradeIfPossible(potentialEntryTrade, tick)
                                                                         End If
                                                                     End If
                                                                 End If
