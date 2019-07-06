@@ -2,7 +2,7 @@
 Imports System.Threading
 Imports Utilities.Numbers
 
-Public Class ATRBasedCandleRangeStrategyRule
+Public Class OpenATRStrategyRule
     Inherits StrategyRule
     Implements IDisposable
 
@@ -58,9 +58,10 @@ Public Class ATRBasedCandleRangeStrategyRule
                 Dim ATRPayload As Dictionary(Of Date, Decimal) = Nothing
                 Indicator.ATR.CalculateATR(14, _inputPayload, ATRPayload)
 
-                Dim firstCandleOfTheTradingDay As Boolean = True
+                Dim firstCandleOfTheTradingDay As Boolean = False
                 Dim potentialHighEntryPrice As Decimal = 0
                 Dim potentialLowEntryPrice As Decimal = 0
+                Dim stoplossPrice As Decimal = 0
                 Dim signalCandle As Payload = Nothing
                 Dim firstTradeEnterd As Boolean = False
                 Dim lastSignal As Integer = 0
@@ -88,104 +89,102 @@ Public Class ATRBasedCandleRangeStrategyRule
                     Dim supporting5 As String = _capPercentage
                     If runningPayload.Date = _tradingDate.Date Then
                         If potentialHighEntryPrice = 0 AndAlso potentialLowEntryPrice = 0 Then
-                            If _inputPayload(runningPayload).CandleRange <> 0 AndAlso
-                                _inputPayload(runningPayload).CandleRange <= ATRPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) Then
-                                signalCandle = _inputPayload(runningPayload)
-                                potentialHighEntryPrice = _inputPayload(runningPayload).High
-                                potentialLowEntryPrice = _inputPayload(runningPayload).Low
+                            Dim previousDayLastCandleATR As Decimal = ConvertFloorCeling(ATRPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate), _tickSize, RoundOfType.Celing)
+                            signalCandle = _inputPayload(runningPayload)
+                            potentialHighEntryPrice = _inputPayload(runningPayload).Open + previousDayLastCandleATR
+                            potentialLowEntryPrice = _inputPayload(runningPayload).Open - previousDayLastCandleATR
+                            stoplossPrice = _inputPayload(runningPayload).Open
+                            firstCandleOfTheTradingDay = True
+                        End If
+                        If _inputPayload(runningPayload).High >= potentialHighEntryPrice AndAlso
+                                _inputPayload(runningPayload).Low <= potentialLowEntryPrice Then
+                            'If (Not firstTradeEnterd AndAlso _inputPayload(runningPayload).CandleColor = Color.Red) OrElse
+                            '    (firstTradeEnterd AndAlso lastSignal = -1) Then
+                            'If _inputPayload(runningPayload).CandleColor = Color.Red Then
+                            entryData.BuySignal = 1
+                            entryData.BuyEntry = potentialHighEntryPrice
+                            entryData.BuyStoploss = stoplossPrice - CalculateBuffer(stoplossPrice, RoundOfType.Floor)
+                            If EarlyStoploss Then
+                                entryData.BuyStoploss = entryData.BuyStoploss + ConvertFloorCeling((entryData.BuyEntry - entryData.BuyStoploss) * 20 / 100, _tickSize, RoundOfType.Celing)
                             End If
-                        Else
-                            Dim highBuffer As Decimal = CalculateBuffer(potentialHighEntryPrice, Utilities.Numbers.NumberManipulation.RoundOfType.Floor)
-                            Dim lowBuffer As Decimal = CalculateBuffer(potentialLowEntryPrice, Utilities.Numbers.NumberManipulation.RoundOfType.Floor)
-                            If _inputPayload(runningPayload).High >= potentialHighEntryPrice + highBuffer AndAlso
-                                _inputPayload(runningPayload).Low <= potentialLowEntryPrice - lowBuffer Then
-                                'If (Not firstTradeEnterd AndAlso _inputPayload(runningPayload).CandleColor = Color.Red) OrElse
-                                '    (firstTradeEnterd AndAlso lastSignal = -1) Then
-                                'If _inputPayload(runningPayload).CandleColor = Color.Red Then
-                                entryData.BuySignal = 1
-                                entryData.BuyEntry = potentialHighEntryPrice + highBuffer
-                                entryData.BuyStoploss = potentialLowEntryPrice - lowBuffer
-                                If EarlyStoploss Then
-                                    entryData.BuyStoploss = entryData.BuyStoploss + ConvertFloorCeling((entryData.BuyEntry - entryData.BuyStoploss) * 20 / 100, _tickSize, RoundOfType.Celing)
-                                End If
-                                If Not firstTradeEnterd Then
-                                    If FirstTradeTargetMultiplier < 3 Then
-                                        entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * FirstTradeTargetMultiplier
-                                    Else
-                                        entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
-                                    End If
+                            If Not firstTradeEnterd Then
+                                If FirstTradeTargetMultiplier < 3 Then
+                                    entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * FirstTradeTargetMultiplier
                                 Else
-                                    entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
+                                    entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - stoplossPrice) * FirstTradeTargetMultiplier
                                 End If
-                                If _stockType = Trade.TypeOfStock.Cash Then
-                                    Select Case QuantityFlag
-                                        Case 1
-                                            entryData.BuyQuantity = Strategy.CalculateQuantityFromInvestment(_quantity, CapitalToBeUsed, entryData.BuyEntry, _stockType)
-                                        Case 2
-                                            entryData.BuyQuantity = Strategy.CalculateQuantityFromSL(tradingSymbol, entryData.BuyEntry, entryData.BuyStoploss, Math.Abs(MaxStoplossAmount) * -1, Trade.TypeOfStock.Cash)
-                                        Case 3
-                                            Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
-                                            If capitalRequired < CapitalToBeUsed Then
-                                                entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
-                                            End If
-                                    End Select
-                                ElseIf _stockType = Trade.TypeOfStock.Futures Then
-                                    Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
-                                    If capitalRequired < CapitalToBeUsed Then
-                                        entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
-                                    End If
-                                End If
-                                supporting1 = signalCandle.PayloadDate.ToShortTimeString
-                                supporting2 = signalCandle.CandleRange
-                                supporting3 = ATRPayload(signalCandle.PreviousCandlePayload.PayloadDate)
-                                firstTradeEnterd = True
-                                lastSignal = entryData.BuySignal
-                                'End If
-                                'If _inputPayload(runningPayload).CandleColor = Color.Green Then
-                                entryData.SellSignal = -1
-                                entryData.SellEntry = potentialLowEntryPrice - lowBuffer
-                                entryData.SellStoploss = potentialHighEntryPrice + highBuffer
-                                If EarlyStoploss Then
-                                    entryData.SellStoploss = entryData.SellStoploss - ConvertFloorCeling((entryData.SellStoploss - entryData.SellEntry) * 20 / 100, _tickSize, RoundOfType.Celing)
-                                End If
-                                If Not firstTradeEnterd Then
-                                    If FirstTradeTargetMultiplier < 3 Then
-                                        entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * FirstTradeTargetMultiplier
-                                    Else
-                                        entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
-                                    End If
-                                Else
-                                    entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
-                                End If
-                                If _stockType = Trade.TypeOfStock.Cash Then
-                                    Select Case QuantityFlag
-                                        Case 1
-                                            entryData.SellQuantity = Strategy.CalculateQuantityFromInvestment(_quantity, CapitalToBeUsed, entryData.SellEntry, _stockType)
-                                        Case 2
-                                            entryData.SellQuantity = Strategy.CalculateQuantityFromSL(tradingSymbol, entryData.SellStoploss, entryData.SellEntry, Math.Abs(MaxStoplossAmount) * -1, Trade.TypeOfStock.Cash)
-                                        Case 3
-                                            Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
-                                            If capitalRequired < CapitalToBeUsed Then
-                                                entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
-                                            End If
-                                    End Select
-                                ElseIf _stockType = Trade.TypeOfStock.Futures Then
-                                    Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
-                                    If capitalRequired < CapitalToBeUsed Then
-                                        entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
-                                    End If
-                                End If
-                                supporting1 = signalCandle.PayloadDate.ToShortTimeString
-                                supporting2 = signalCandle.CandleRange
-                                supporting3 = ATRPayload(signalCandle.PreviousCandlePayload.PayloadDate)
-                                firstTradeEnterd = True
-                                lastSignal = entryData.SellSignal
-                                'End If
                             Else
-                                If _inputPayload(runningPayload).High >= potentialHighEntryPrice + highBuffer Then
+                                entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - stoplossPrice) * ForwardTradeTargetMultiplier
+                            End If
+                            If _stockType = Trade.TypeOfStock.Cash Then
+                                Select Case QuantityFlag
+                                    Case 1
+                                        entryData.BuyQuantity = Strategy.CalculateQuantityFromInvestment(_quantity, CapitalToBeUsed, entryData.BuyEntry, _stockType)
+                                    Case 2
+                                        entryData.BuyQuantity = Strategy.CalculateQuantityFromSL(tradingSymbol, entryData.BuyEntry, entryData.BuyStoploss, Math.Abs(MaxStoplossAmount) * -1, Trade.TypeOfStock.Cash)
+                                    Case 3
+                                        Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
+                                        If capitalRequired < CapitalToBeUsed Then
+                                            entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                        End If
+                                End Select
+                            ElseIf _stockType = Trade.TypeOfStock.Futures Then
+                                Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
+                                If capitalRequired < CapitalToBeUsed Then
+                                    entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                End If
+                            End If
+                            supporting1 = signalCandle.PayloadDate.ToShortTimeString
+                            supporting2 = signalCandle.CandleRange
+                            supporting3 = ATRPayload(signalCandle.PreviousCandlePayload.PayloadDate)
+                            firstTradeEnterd = True
+                            lastSignal = entryData.BuySignal
+                            'End If
+                            'If _inputPayload(runningPayload).CandleColor = Color.Green Then
+                            entryData.SellSignal = -1
+                            entryData.SellEntry = potentialLowEntryPrice
+                            entryData.SellStoploss = stoplossPrice + CalculateBuffer(stoplossPrice, RoundOfType.Floor)
+                            If EarlyStoploss Then
+                                entryData.SellStoploss = entryData.SellStoploss - ConvertFloorCeling((entryData.SellStoploss - entryData.SellEntry) * 20 / 100, _tickSize, RoundOfType.Celing)
+                            End If
+                            If Not firstTradeEnterd Then
+                                If FirstTradeTargetMultiplier < 3 Then
+                                    entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * FirstTradeTargetMultiplier
+                                Else
+                                    entryData.SellTarget = entryData.SellEntry - (stoplossPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
+                                End If
+                            Else
+                                entryData.SellTarget = entryData.SellEntry - (stoplossPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
+                            End If
+                            If _stockType = Trade.TypeOfStock.Cash Then
+                                Select Case QuantityFlag
+                                    Case 1
+                                        entryData.SellQuantity = Strategy.CalculateQuantityFromInvestment(_quantity, CapitalToBeUsed, entryData.SellEntry, _stockType)
+                                    Case 2
+                                        entryData.SellQuantity = Strategy.CalculateQuantityFromSL(tradingSymbol, entryData.SellStoploss, entryData.SellEntry, Math.Abs(MaxStoplossAmount) * -1, Trade.TypeOfStock.Cash)
+                                    Case 3
+                                        Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
+                                        If capitalRequired < CapitalToBeUsed Then
+                                            entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                        End If
+                                End Select
+                            ElseIf _stockType = Trade.TypeOfStock.Futures Then
+                                Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
+                                If capitalRequired < CapitalToBeUsed Then
+                                    entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                End If
+                            End If
+                            supporting1 = signalCandle.PayloadDate.ToShortTimeString
+                            supporting2 = signalCandle.CandleRange
+                            supporting3 = ATRPayload(signalCandle.PreviousCandlePayload.PayloadDate)
+                            firstTradeEnterd = True
+                            lastSignal = entryData.SellSignal
+                            'End If
+                        Else
+                            If _inputPayload(runningPayload).High >= potentialHighEntryPrice Then
                                     entryData.BuySignal = 1
-                                    entryData.BuyEntry = potentialHighEntryPrice + highBuffer
-                                    entryData.BuyStoploss = potentialLowEntryPrice - lowBuffer
+                                    entryData.BuyEntry = potentialHighEntryPrice
+                                    entryData.BuyStoploss = stoplossPrice - CalculateBuffer(stoplossPrice, RoundOfType.Floor)
                                     If EarlyStoploss Then
                                         entryData.BuyStoploss = entryData.BuyStoploss + ConvertFloorCeling((entryData.BuyEntry - entryData.BuyStoploss) * 20 / 100, _tickSize, RoundOfType.Celing)
                                     End If
@@ -193,10 +192,10 @@ Public Class ATRBasedCandleRangeStrategyRule
                                         If FirstTradeTargetMultiplier < 3 Then
                                             entryData.BuyTarget = entryData.BuyEntry + (entryData.BuyEntry - entryData.BuyStoploss) * FirstTradeTargetMultiplier
                                         Else
-                                            entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
+                                            entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - stoplossPrice) * FirstTradeTargetMultiplier
                                         End If
                                     Else
-                                        entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
+                                        entryData.BuyTarget = entryData.BuyEntry + (potentialHighEntryPrice - stoplossPrice) * ForwardTradeTargetMultiplier
                                     End If
                                     If _stockType = Trade.TypeOfStock.Cash Then
                                         Select Case QuantityFlag
@@ -222,10 +221,10 @@ Public Class ATRBasedCandleRangeStrategyRule
                                     firstTradeEnterd = True
                                     lastSignal = entryData.BuySignal
                                 End If
-                                If _inputPayload(runningPayload).Low <= potentialLowEntryPrice - lowBuffer Then
+                                If _inputPayload(runningPayload).Low <= potentialLowEntryPrice Then
                                     entryData.SellSignal = -1
-                                    entryData.SellEntry = potentialLowEntryPrice - lowBuffer
-                                    entryData.SellStoploss = potentialHighEntryPrice + highBuffer
+                                    entryData.SellEntry = potentialLowEntryPrice
+                                    entryData.SellStoploss = stoplossPrice + CalculateBuffer(stoplossPrice, RoundOfType.Floor)
                                     If EarlyStoploss Then
                                         entryData.SellStoploss = entryData.SellStoploss - ConvertFloorCeling((entryData.SellStoploss - entryData.SellEntry) * 20 / 100, _tickSize, RoundOfType.Celing)
                                     End If
@@ -233,10 +232,10 @@ Public Class ATRBasedCandleRangeStrategyRule
                                         If FirstTradeTargetMultiplier < 3 Then
                                             entryData.SellTarget = entryData.SellEntry - (entryData.SellStoploss - entryData.SellEntry) * FirstTradeTargetMultiplier
                                         Else
-                                            entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
+                                            entryData.SellTarget = entryData.SellEntry - (stoplossPrice - potentialLowEntryPrice) * FirstTradeTargetMultiplier
                                         End If
                                     Else
-                                        entryData.SellTarget = entryData.SellEntry - (potentialHighEntryPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
+                                        entryData.SellTarget = entryData.SellEntry - (stoplossPrice - potentialLowEntryPrice) * ForwardTradeTargetMultiplier
                                     End If
                                     If _stockType = Trade.TypeOfStock.Cash Then
                                         Select Case QuantityFlag
@@ -264,35 +263,46 @@ Public Class ATRBasedCandleRangeStrategyRule
                                 End If
                             End If
                         End If
-                    End If
 
                     If _inputPayload(runningPayload).PreviousCandlePayload IsNot Nothing Then
                         If outputSignalPayload Is Nothing Then outputSignalPayload = New Dictionary(Of Date, EntryDetails)
-                        outputSignalPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, entryData)
-                        'If outputEntryPayload Is Nothing Then outputEntryPayload = New Dictionary(Of Date, Decimal)
-                        'outputEntryPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, entryPrice)
-                        'If outputTargetPayload Is Nothing Then outputTargetPayload = New Dictionary(Of Date, Decimal)
-                        'outputTargetPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, targetPrice)
-                        'If outputStoplossPayload Is Nothing Then outputStoplossPayload = New Dictionary(Of Date, Decimal)
-                        'outputStoplossPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, slPrice)
-                        'If outputQuantityPayload Is Nothing Then outputQuantityPayload = New Dictionary(Of Date, Integer)
-                        'outputQuantityPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, quantity)
-
-                        'If outputModifyStoplossPayload Is Nothing Then outputModifyStoplossPayload = New Dictionary(Of Date, ModifyStoploss)
-                        'outputModifyStoplossPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, modifySLPrice)
-                        'If outputModifyTargetPayload Is Nothing Then outputModifyTargetPayload = New Dictionary(Of Date, Decimal)
-                        'outputModifyTargetPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, modifyTargetPrice)
+                        If firstCandleOfTheTradingDay Then
+                            outputSignalPayload.Add(_inputPayload(runningPayload).PayloadDate.AddMinutes(-_timeframe), entryData)
+                        Else
+                            outputSignalPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, entryData)
+                        End If
                         If outputSupporting1Payload Is Nothing Then outputSupporting1Payload = New Dictionary(Of Date, String)
-                        outputSupporting1Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting1)
+                        If firstCandleOfTheTradingDay Then
+                            outputSupporting1Payload.Add(_inputPayload(runningPayload).PayloadDate.AddMinutes(-_timeframe), supporting1)
+                        Else
+                            outputSupporting1Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting1)
+                        End If
                         If outputSupporting2Payload Is Nothing Then outputSupporting2Payload = New Dictionary(Of Date, String)
-                        outputSupporting2Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting2)
+                        If firstCandleOfTheTradingDay Then
+                            outputSupporting2Payload.Add(_inputPayload(runningPayload).PayloadDate.AddMinutes(-_timeframe), supporting2)
+                        Else
+                            outputSupporting2Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting2)
+                        End If
                         If outputSupporting3Payload Is Nothing Then outputSupporting3Payload = New Dictionary(Of Date, String)
-                        outputSupporting3Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting3)
+                        If firstCandleOfTheTradingDay Then
+                            outputSupporting3Payload.Add(_inputPayload(runningPayload).PayloadDate.AddMinutes(-_timeframe), supporting3)
+                        Else
+                            outputSupporting3Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting3)
+                        End If
                         If outputSupporting4Payload Is Nothing Then outputSupporting4Payload = New Dictionary(Of Date, String)
-                        outputSupporting4Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting4)
+                        If firstCandleOfTheTradingDay Then
+                            outputSupporting4Payload.Add(_inputPayload(runningPayload).PayloadDate.AddMinutes(-_timeframe), supporting4)
+                        Else
+                            outputSupporting4Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting4)
+                        End If
                         If outputSupporting5Payload Is Nothing Then outputSupporting5Payload = New Dictionary(Of Date, String)
-                        outputSupporting5Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting5)
+                        If firstCandleOfTheTradingDay Then
+                            outputSupporting5Payload.Add(_inputPayload(runningPayload).PayloadDate.AddMinutes(-_timeframe), supporting5)
+                        Else
+                            outputSupporting5Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting5)
+                        End If
                     End If
+                    firstCandleOfTheTradingDay = False
                 Next
 
                 If outputPayload Is Nothing Then outputPayload = New Dictionary(Of String, Object)

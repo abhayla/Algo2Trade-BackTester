@@ -227,10 +227,10 @@ Public Class frm_BackTest
                     For trlng As Integer = 1 To 1 Step 1
                         For smdirectiocEntry As Integer = 0 To 0 Step 1
                             If trlng = 0 And smdirectiocEntry = 1 Then Continue For
-                            For countBreakevenTrades As Integer = 0 To 1 Step 1
+                            For countBreakevenTrades As Integer = 0 To 0 Step 1
                                 If trlng = 0 And countBreakevenTrades = 1 Then Continue For
-                                For overallLoss As Decimal = 40000 To 40000 Step 10000
-                                    For earlySL As Integer = 0 To 0 Step 1
+                                For overallLoss As Decimal = 24000 To 24000 Step 10000
+                                    For nmbrOfTrade As Integer = 4 To 8 Step 1
                                         Using backtestStrategy As New GenericStrategy(canceller:=cts,
                                                                                         tickSize:=0.05,
                                                                                         eodExitTime:=TimeSpan.Parse("15:15:00"),
@@ -255,7 +255,7 @@ Public Class frm_BackTest
                                                 .QuantityFlag = 3
                                                 .MaxStoplossAmount = 1000
                                                 .FirstTradeTargetMultiplier = firstTradeMultiplier
-                                                .EarlyStoploss = earlySL
+                                                .EarlyStoploss = False
                                                 .ForwardTradeTargetMultiplier = 3
                                                 .CapitalToBeUsed = 20000
                                                 .CandleBasedEntry = True
@@ -272,14 +272,14 @@ Public Class frm_BackTest
                                                 End Select
                                                 .NumberOfTradeableStockPerDay = 5
                                                 .NumberOfTradePerDay = Integer.MaxValue
-                                                .NumberOfTradePerStockPerDay = 4
+                                                .NumberOfTradePerStockPerDay = nmbrOfTrade
                                                 .CountTradesWithBreakevenMovement = countBreakevenTrades
                                                 .TrailingSL = trlng
                                                 .SameDirectionTrade = smdirectiocEntry
                                                 .ReverseSignalTrade = True
                                                 .ModifyTarget = False
                                                 .ModifyStoploss = False
-                                                .ExitOnOverAllFixedTargetStoploss = True
+                                                .ExitOnOverAllFixedTargetStoploss = False
                                                 .OverAllProfitPerDay = Decimal.MaxValue
                                                 .OverAllLossPerDay = overallLoss * -1
                                                 .ExitOnStockFixedTargetStoploss = False

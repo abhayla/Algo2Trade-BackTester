@@ -1265,14 +1265,14 @@ Public MustInherit Class Strategy
 #End Region
 
 #Region "Deserialize"
-    Public Function Deserialize(ByVal inputFilePath As String) As Dictionary(Of Date, Dictionary(Of String, List(Of Trade)))
+    Public Function Deserialize(ByVal inputFilePath As String, ByVal retryCounter As Integer) As Dictionary(Of Date, Dictionary(Of String, List(Of Trade)))
         Dim ret As Dictionary(Of Date, Dictionary(Of String, List(Of Trade))) = Nothing
         Using stream As New FileStream(inputFilePath, FileMode.Open)
             Dim binaryFormatter = New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
             Dim counter As Integer = 0
             Dim totalSize As Long = 0
             While stream.Position <> stream.Length
-                If totalSize <> 0 Then OnHeartbeat(String.Format("Deserializing Trades collection {0}/{1}", counter, totalSize))
+                If totalSize <> 0 Then OnHeartbeat(String.Format("Deserializing Trades collection {0}/{1} Retry Counter:{2}", counter, totalSize, retryCounter))
                 Dim temp As KeyValuePair(Of Date, Dictionary(Of String, List(Of Trade))) = Nothing
                 Dim tempData As Dictionary(Of Date, Dictionary(Of String, List(Of Trade))) = binaryFormatter.Deserialize(stream)
                 For Each runningDate In tempData.Keys
@@ -1304,13 +1304,13 @@ Public MustInherit Class Strategy
 
 #Region "Print to excel direct"
     Public Overridable Sub PrintArrayToExcel(ByVal fileName As String, Optional ByVal tradesFilename As String = Nothing, Optional ByVal capitalFileName As String = Nothing)
-        For retryCounter As Integer = 0 To 20 Step 1
+        For retryCounter As Integer = 1 To 20 Step 1
             Try
                 Dim allTradesData As Dictionary(Of Date, Dictionary(Of String, List(Of Trade))) = Nothing
                 Dim allCapitalData As Dictionary(Of Date, List(Of Capital)) = Nothing
                 If tradesFilename IsNot Nothing AndAlso capitalFileName IsNot Nothing Then
                     OnHeartbeat("Deserializing Trades collections")
-                    allTradesData = Deserialize(tradesFilename)
+                    allTradesData = Deserialize(tradesFilename, retryCounter)
                     OnHeartbeat("Deserializing Capital collections")
                     allCapitalData = Utilities.Strings.DeserializeToCollection(Of Dictionary(Of Date, List(Of Capital)))(capitalFileName)
                 Else
@@ -1540,10 +1540,10 @@ Public MustInherit Class Strategy
                             mainRawData(rowCtr, colCtr) = "PL After Brokerage"
                             colCtr += 1
                             If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                            mainRawData(rowCtr, colCtr) = "Maximum Draw Up"
+                            mainRawData(rowCtr, colCtr) = "Maximum DrawUp Point"
                             colCtr += 1
                             If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                            mainRawData(rowCtr, colCtr) = "Maximum Draw Down"
+                            mainRawData(rowCtr, colCtr) = "Maximum DrawDown Point"
                             colCtr += 1
                             If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                             mainRawData(rowCtr, colCtr) = "Maximum Draw Up PL"
@@ -1551,9 +1551,9 @@ Public MustInherit Class Strategy
                             If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                             mainRawData(rowCtr, colCtr) = "Maximum Draw Down PL"
                             colCtr += 1
-                            If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                            mainRawData(rowCtr, colCtr) = "Signal Candle Time"
-                            colCtr += 1
+                            'If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
+                            'mainRawData(rowCtr, colCtr) = "Signal Candle Time"
+                            'colCtr += 1
                             If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                             mainRawData(rowCtr, colCtr) = "Month"
                             colCtr += 1
@@ -1563,11 +1563,11 @@ Public MustInherit Class Strategy
                             If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                             mainRawData(rowCtr, colCtr) = "SL Buffer"
                             colCtr += 1
+                            'If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
+                            'mainRawData(rowCtr, colCtr) = "SquareOffValue"
+                            'colCtr += 1
                             If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                            mainRawData(rowCtr, colCtr) = "SquareOffValue"
-                            colCtr += 1
-                            If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                            mainRawData(rowCtr, colCtr) = "Warning"
+                            mainRawData(rowCtr, colCtr) = "Exit Before PL"
                             colCtr += 1
                             If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                             mainRawData(rowCtr, colCtr) = "Overall Draw Up PL for the day"
@@ -1684,10 +1684,10 @@ Public MustInherit Class Strategy
                                                 mainRawData(rowCtr, colCtr) = tradeTaken.PLAfterBrokerage
                                                 colCtr += 1
                                                 If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                                                mainRawData(rowCtr, colCtr) = tradeTaken.MaximumDrawUp
+                                                mainRawData(rowCtr, colCtr) = If(tradeTaken.EntryDirection = Trade.TradeExecutionDirection.Buy, tradeTaken.MaximumDrawUp - tradeTaken.EntryPrice, tradeTaken.EntryPrice - tradeTaken.MaximumDrawUp)
                                                 colCtr += 1
                                                 If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                                                mainRawData(rowCtr, colCtr) = tradeTaken.MaximumDrawDown
+                                                mainRawData(rowCtr, colCtr) = If(tradeTaken.EntryDirection = Trade.TradeExecutionDirection.Buy, tradeTaken.MaximumDrawDown - tradeTaken.EntryPrice, tradeTaken.EntryPrice - tradeTaken.MaximumDrawDown)
                                                 colCtr += 1
                                                 If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                                                 mainRawData(rowCtr, colCtr) = tradeTaken.MaximumDrawUpPL
@@ -1695,9 +1695,9 @@ Public MustInherit Class Strategy
                                                 If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                                                 mainRawData(rowCtr, colCtr) = tradeTaken.MaximumDrawDownPL
                                                 colCtr += 1
-                                                If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                                                mainRawData(rowCtr, colCtr) = tradeTaken.SignalCandle.PayloadDate.ToString("HH:mm:ss")
-                                                colCtr += 1
+                                                'If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
+                                                'mainRawData(rowCtr, colCtr) = tradeTaken.SignalCandle.PayloadDate.ToString("HH:mm:ss")
+                                                'colCtr += 1
                                                 If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                                                 mainRawData(rowCtr, colCtr) = String.Format("{0}-{1}", tradeTaken.TradingDate.ToString("yyyy"), tradeTaken.TradingDate.ToString("MM"))
                                                 colCtr += 1
@@ -1707,9 +1707,9 @@ Public MustInherit Class Strategy
                                                 If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                                                 mainRawData(rowCtr, colCtr) = tradeTaken.StoplossBuffer
                                                 colCtr += 1
-                                                If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
-                                                mainRawData(rowCtr, colCtr) = tradeTaken.SquareOffValue
-                                                colCtr += 1
+                                                'If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
+                                                'mainRawData(rowCtr, colCtr) = tradeTaken.SquareOffValue
+                                                'colCtr += 1
                                                 If colCtr > UBound(mainRawData, 2) Then ReDim Preserve mainRawData(UBound(mainRawData, 1), 0 To UBound(mainRawData, 2) + 1)
                                                 mainRawData(rowCtr, colCtr) = If(Math.Round(tradeTaken.PLPoint, 4) = Math.Round(tradeTaken.WarningPLPoint, 4), "FALSE", "TRUE")
                                                 colCtr += 1

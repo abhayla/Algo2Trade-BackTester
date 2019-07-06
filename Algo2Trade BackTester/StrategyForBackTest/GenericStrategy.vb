@@ -75,15 +75,14 @@ Public Class GenericStrategy
 #Region "Test Strategy Normal"
     Public Overrides Async Function TestStrategyAsync(startDate As Date, endDate As Date) As Task
         Await Task.Delay(0).ConfigureAwait(False)
-        Dim filename As String = String.Format("TF {0},Trlg {1},Samesd {2},CtBrkevn {3},ML {4},Nmb {5},1TgMul {6},ErlySL {7}",
+        Dim filename As String = String.Format("TF {0},Trlg {1},Samesd {2},CtBrkevn {3},ML {4},Nmb {5},1TgMul {6}",
                                                Me._SignalTimeFrame,
                                                Me.TrailingSL,
                                                Me.SameDirectionTrade,
                                                Me.CountTradesWithBreakevenMovement,
                                                Me.OverAllLossPerDay,
                                                Me.NumberOfTradePerStockPerDay,
-                                               Me.FirstTradeTargetMultiplier,
-                                               Me.EarlyStoploss)
+                                               Me.FirstTradeTargetMultiplier)
 
         Dim tradesFileName As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.Trades.a2t", filename))
         Dim capitalFileName As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.Capital.a2t", filename))
@@ -169,7 +168,7 @@ Public Class GenericStrategy
 
                     'First lets build the payload for all the stocks
                     Dim stockCount As Integer = 0
-                    Dim stockData As Dictionary(Of String, Dictionary(Of Date, Payload)) = Nothing
+                    'Dim stockData As Dictionary(Of String, Dictionary(Of Date, Payload)) = Nothing
                     For Each stock In stockList.Keys
                         stockCount += 1
                         Dim XDayOneMinutePayload As Dictionary(Of Date, Payload) = Nothing
@@ -201,10 +200,10 @@ Public Class GenericStrategy
                             XDayOneMinutePayload = Data.PastIntradayData(tradeCheckingDate)(stock)
                         Else
                             XDayOneMinutePayload = Cmn.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
-                            If XDayOneMinutePayload IsNot Nothing Then
-                                If stockData Is Nothing Then stockData = New Dictionary(Of String, Dictionary(Of Date, Payload))
-                                stockData.Add(stock, XDayOneMinutePayload)
-                            End If
+                            'If XDayOneMinutePayload IsNot Nothing Then
+                            '    If stockData Is Nothing Then stockData = New Dictionary(Of String, Dictionary(Of Date, Payload))
+                            '    stockData.Add(stock, XDayOneMinutePayload)
+                            'End If
                         End If
 
                         'Now transfer only the current date payload into the workable payload (this will be used for the main loop and checking if the date is a valid date)
@@ -231,18 +230,7 @@ Public Class GenericStrategy
 
                                 If XDayXMinuteHAPayload IsNot Nothing AndAlso XDayXMinuteHAPayload.Count > 0 Then
                                     'TODO: Change
-                                    'Using strategyBaseRule As New ATRBandBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
-                                    '    strategyBaseRule.QuantityFlag = Me.QuantityFlag
-                                    '    strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
-                                    '    strategyBaseRule.FirstTradeTargetMultiplier = Me.FirstTradeTargetMultiplier
-                                    '    strategyBaseRule.TargetMultiplierWithBuffer = Me.TargetMultiplierWithBuffer
-                                    '    strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
-                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
-                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                    'End Using
                                     Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
-                                        'strategyBaseRule.MinimumWickPercentageOfCandleRange = Me.MinimumWickPercentageOfCandleRange
-                                        'strategyBaseRule.MinimumWickPercentageOutsideATRBand = Me.MinimumWickPercentageOutsideATRBand
                                         strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
                                         strategyBaseRule.QuantityFlag = Me.QuantityFlag
                                         strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
@@ -252,6 +240,16 @@ Public Class GenericStrategy
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     End Using
+                                    'Using strategyBaseRule As New OpenATRStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
+                                    '    strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
+                                    '    strategyBaseRule.QuantityFlag = Me.QuantityFlag
+                                    '    strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
+                                    '    strategyBaseRule.FirstTradeTargetMultiplier = Me.FirstTradeTargetMultiplier
+                                    '    strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
+                                    '    strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
                                 End If
                                 If XDayRuleOutputPayload IsNot Nothing Then
                                     If XDayRuleOutputPayload.ContainsKey("Signal") Then XDayRuleSignalPayload = CType(XDayRuleOutputPayload("Signal"), Dictionary(Of Date, EntryDetails))
@@ -356,10 +354,10 @@ Public Class GenericStrategy
                         'XDayRuleOutputPayload = Nothing
 #End Region
                     Next
-                    If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
-                        If Data.PastIntradayData Is Nothing Then Data.PastIntradayData = New Dictionary(Of Date, Dictionary(Of String, Dictionary(Of Date, Payload)))
-                        Data.PastIntradayData.Add(tradeCheckingDate, stockData)
-                    End If
+                    'If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                    '    If Data.PastIntradayData Is Nothing Then Data.PastIntradayData = New Dictionary(Of Date, Dictionary(Of String, Dictionary(Of Date, Payload)))
+                    '    Data.PastIntradayData.Add(tradeCheckingDate, stockData)
+                    'End If
 
                     '------------------------------------------------------------------------------------------------------------------------------------------------
 
