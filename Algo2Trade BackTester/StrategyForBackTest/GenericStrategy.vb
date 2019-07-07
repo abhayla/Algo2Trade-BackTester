@@ -230,17 +230,7 @@ Public Class GenericStrategy
 
                                 If XDayXMinuteHAPayload IsNot Nothing AndAlso XDayXMinuteHAPayload.Count > 0 Then
                                     'TODO: Change
-                                    Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
-                                        strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
-                                        strategyBaseRule.QuantityFlag = Me.QuantityFlag
-                                        strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
-                                        strategyBaseRule.FirstTradeTargetMultiplier = Me.FirstTradeTargetMultiplier
-                                        strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
-                                        strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
-                                        strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
-                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                    End Using
-                                    'Using strategyBaseRule As New OpenATRStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
+                                    'Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
                                     '    strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
                                     '    strategyBaseRule.QuantityFlag = Me.QuantityFlag
                                     '    strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
@@ -250,6 +240,16 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
+                                    Using strategyBaseRule As New OpenATRStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
+                                        strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
+                                        strategyBaseRule.QuantityFlag = Me.QuantityFlag
+                                        strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
+                                        strategyBaseRule.FirstTradeTargetMultiplier = Me.FirstTradeTargetMultiplier
+                                        strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
+                                        strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
+                                        strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    End Using
                                 End If
                                 If XDayRuleOutputPayload IsNot Nothing Then
                                     If XDayRuleOutputPayload.ContainsKey("Signal") Then XDayRuleSignalPayload = CType(XDayRuleOutputPayload("Signal"), Dictionary(Of Date, EntryDetails))
@@ -822,27 +822,28 @@ Public Class GenericStrategy
                                                                     CancelTrade(potentialEntryTrade, currentMinuteCandlePayload, "Previous Trade Target reached")
                                                                 Else
                                                                     If SameDirectionTrade Then
-                                                                        Dim lastTrade As Trade = GetLastExitTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
-                                                                        If lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
-                                                                            lastTrade.PLPoint > 0 AndAlso lastTrade.EntryDirection = potentialEntryTrade.EntryDirection Then
-                                                                            Dim exitMinuteBlock As Date = New Date(lastTrade.ExitTime.Year,
-                                                                                                                    lastTrade.ExitTime.Month,
-                                                                                                                    lastTrade.ExitTime.Day,
-                                                                                                                    lastTrade.ExitTime.Hour,
-                                                                                                                    Math.Floor(lastTrade.ExitTime.Minute / _SignalTimeFrame) * _SignalTimeFrame, 0)
-                                                                            Dim currentMinuteBlock As Date = New Date(currentMinuteCandlePayload.PayloadDate.Year,
-                                                                                                                    currentMinuteCandlePayload.PayloadDate.Month,
-                                                                                                                    currentMinuteCandlePayload.PayloadDate.Day,
-                                                                                                                    currentMinuteCandlePayload.PayloadDate.Hour,
-                                                                                                                    Math.Floor(currentMinuteCandlePayload.PayloadDate.Minute / _SignalTimeFrame) * _SignalTimeFrame, 0)
-                                                                            If currentMinuteCandlePayload.PayloadDate >= exitMinuteBlock.AddMinutes(_SignalTimeFrame) Then
-                                                                                If IsAnyCandleClosesAboveOrBelow(currentMinuteBlock, exitMinuteBlock, XDayXMinuteStocksPayload(stockName), potentialEntryTrade) Then
-                                                                                    EnterTradeIfPossible(potentialEntryTrade, tick)
-                                                                                End If
-                                                                            End If
-                                                                        Else
-                                                                            EnterTradeIfPossible(potentialEntryTrade, tick)
-                                                                        End If
+                                                                        'Dim lastTrade As Trade = GetLastExitTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
+                                                                        'If lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
+                                                                        '    lastTrade.PLPoint > 0 AndAlso lastTrade.EntryDirection = potentialEntryTrade.EntryDirection Then
+                                                                        '    Dim exitMinuteBlock As Date = New Date(lastTrade.ExitTime.Year,
+                                                                        '                                            lastTrade.ExitTime.Month,
+                                                                        '                                            lastTrade.ExitTime.Day,
+                                                                        '                                            lastTrade.ExitTime.Hour,
+                                                                        '                                            Math.Floor(lastTrade.ExitTime.Minute / _SignalTimeFrame) * _SignalTimeFrame, 0)
+                                                                        '    Dim currentMinuteBlock As Date = New Date(currentMinuteCandlePayload.PayloadDate.Year,
+                                                                        '                                            currentMinuteCandlePayload.PayloadDate.Month,
+                                                                        '                                            currentMinuteCandlePayload.PayloadDate.Day,
+                                                                        '                                            currentMinuteCandlePayload.PayloadDate.Hour,
+                                                                        '                                            Math.Floor(currentMinuteCandlePayload.PayloadDate.Minute / _SignalTimeFrame) * _SignalTimeFrame, 0)
+                                                                        '    If currentMinuteCandlePayload.PayloadDate >= exitMinuteBlock.AddMinutes(_SignalTimeFrame) Then
+                                                                        '        If IsAnyCandleClosesAboveOrBelow(currentMinuteBlock, exitMinuteBlock, XDayXMinuteStocksPayload(stockName), potentialEntryTrade) Then
+                                                                        '            EnterTradeIfPossible(potentialEntryTrade, tick)
+                                                                        '        End If
+                                                                        '    End If
+                                                                        'Else
+                                                                        '    EnterTradeIfPossible(potentialEntryTrade, tick)
+                                                                        'End If
+                                                                        EnterTradeIfPossible(potentialEntryTrade, tick)
                                                                     Else
                                                                         Dim lastTrade As Trade = GetLastExitTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                                                         'If lastTrade Is Nothing OrElse
