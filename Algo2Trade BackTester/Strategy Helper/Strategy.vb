@@ -1103,20 +1103,21 @@ Public MustInherit Class Strategy
     End Function
 
     Public Function GetBreakevenPoints(ByVal currentTrade As Trade) As Decimal
-        Dim ret As Decimal = 0
+        Dim ret As Decimal = TickSize
         If currentTrade IsNot Nothing Then
-            ret = currentTrade.EntryPrice
             If currentTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
-                For ret = currentTrade.EntryPrice To Decimal.MaxValue Step TickSize
-                    Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, currentTrade.EntryPrice, ret, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
+                For exitPrice As Decimal = currentTrade.EntryPrice To Decimal.MaxValue Step ret
+                    Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, currentTrade.EntryPrice, exitPrice, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
                     If pl >= 0 Then
+                        ret = exitPrice - currentTrade.EntryPrice
                         Exit For
                     End If
                 Next
             ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
-                For ret = currentTrade.EntryPrice To Decimal.MaxValue Step TickSize * -1
-                    Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, ret, currentTrade.EntryPrice, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
+                For exitPrice As Decimal = currentTrade.EntryPrice To Decimal.MaxValue Step ret * -1
+                    Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, exitPrice, currentTrade.EntryPrice, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
                     If pl >= 0 Then
+                        ret = currentTrade.EntryPrice - exitPrice
                         Exit For
                     End If
                 Next
