@@ -1052,17 +1052,18 @@ Public MustInherit Class Strategy
         Dim tradeDirection As Trade.TradeExecutionDirection = currentTrade.EntryDirection
         Dim gain As Double = Math.Abs(currentLTP - entryPrice)
         Dim targetToAchive As Decimal = Decimal.MinValue
-        Dim breakevenPoints As Decimal = GetBreakevenPoints(currentTrade)
         ret = currentTrade.PotentialStopLoss
         If tradeDirection = Trade.TradeExecutionDirection.Buy Then
             targetToAchive = (currentTrade.PotentialTarget - currentTrade.EntryPrice) * 2 / 3
             If gain >= targetToAchive Then
+                Dim breakevenPoints As Decimal = GetBreakevenPoints(currentTrade)
                 ret = entryPrice + breakevenPoints
                 movementRemarks = String.Format("Move to breakeven point {0} at {1}", breakevenPoints, currentLTPTime.ToString("HH:mm:ss"))
             End If
         ElseIf tradeDirection = Trade.TradeExecutionDirection.Sell Then
             targetToAchive = (currentTrade.EntryPrice - currentTrade.PotentialTarget) * 2 / 3
             If gain >= targetToAchive Then
+                Dim breakevenPoints As Decimal = GetBreakevenPoints(currentTrade)
                 ret = entryPrice - breakevenPoints
                 movementRemarks = String.Format("Move to breakeven point {0} at {1}", breakevenPoints, currentLTPTime.ToString("HH:mm:ss"))
             End If
@@ -1109,15 +1110,15 @@ Public MustInherit Class Strategy
                 For exitPrice As Decimal = currentTrade.EntryPrice To Decimal.MaxValue Step ret
                     Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, currentTrade.EntryPrice, exitPrice, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
                     If pl >= 0 Then
-                        ret = exitPrice - currentTrade.EntryPrice
+                        ret = Math.Round(exitPrice - currentTrade.EntryPrice, 2)
                         Exit For
                     End If
                 Next
             ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
-                For exitPrice As Decimal = currentTrade.EntryPrice To Decimal.MaxValue Step ret * -1
+                For exitPrice As Decimal = currentTrade.EntryPrice To Decimal.MinValue Step ret * -1
                     Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, exitPrice, currentTrade.EntryPrice, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
                     If pl >= 0 Then
-                        ret = currentTrade.EntryPrice - exitPrice
+                        ret = Math.Round(currentTrade.EntryPrice - exitPrice, 2)
                         Exit For
                     End If
                 Next

@@ -20,6 +20,7 @@ Public Class ATRBasedCandleRangeStrategyRule
     Private ReadOnly _atrPercentage As Decimal
     Private ReadOnly _capPercentage As Decimal
     Private ReadOnly _stockType As Trade.TypeOfStock
+    Private _firstEntryQuantity As Integer = 0
 
     Public Sub New(ByVal inputPayload As Dictionary(Of Date, Payload),
                    ByVal tickSize As Decimal, ByVal quantity As Integer,
@@ -130,9 +131,14 @@ Public Class ATRBasedCandleRangeStrategyRule
                                             End If
                                     End Select
                                 ElseIf _stockType = Trade.TypeOfStock.Futures Then
-                                    Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
-                                    If capitalRequired < CapitalToBeUsed Then
-                                        entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                    If _firstEntryQuantity = 0 Then
+                                        Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
+                                        If capitalRequired < CapitalToBeUsed Then
+                                            entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                            _firstEntryQuantity = entryData.BuyQuantity
+                                        End If
+                                    Else
+                                        entryData.BuyQuantity = _firstEntryQuantity
                                     End If
                                 End If
                                 supporting1 = signalCandle.PayloadDate.ToShortTimeString
@@ -170,12 +176,17 @@ Public Class ATRBasedCandleRangeStrategyRule
                                             End If
                                     End Select
                                 ElseIf _stockType = Trade.TypeOfStock.Futures Then
-                                    Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
-                                    If capitalRequired < CapitalToBeUsed Then
-                                        entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                    If _firstEntryQuantity = 0 Then
+                                        Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
+                                        If capitalRequired < CapitalToBeUsed Then
+                                            entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                        End If
+                                        _firstEntryQuantity = entryData.SellQuantity
+                                    Else
+                                        entryData.SellQuantity = _firstEntryQuantity
                                     End If
                                 End If
-                                supporting1 = signalCandle.PayloadDate.ToShortTimeString
+                                    supporting1 = signalCandle.PayloadDate.ToShortTimeString
                                 supporting2 = signalCandle.CandleRange
                                 supporting3 = ATRPayload(signalCandle.PreviousCandlePayload.PayloadDate)
                                 firstTradeEnterd = True
@@ -211,9 +222,14 @@ Public Class ATRBasedCandleRangeStrategyRule
                                                 End If
                                         End Select
                                     ElseIf _stockType = Trade.TypeOfStock.Futures Then
-                                        Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
-                                        If capitalRequired < CapitalToBeUsed Then
-                                            entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                        If _firstEntryQuantity = 0 Then
+                                            Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
+                                            If capitalRequired < CapitalToBeUsed Then
+                                                entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                                _firstEntryQuantity = entryData.BuyQuantity
+                                            End If
+                                        Else
+                                            entryData.BuyQuantity = _firstEntryQuantity
                                         End If
                                     End If
                                     supporting1 = signalCandle.PayloadDate.ToShortTimeString
@@ -251,9 +267,14 @@ Public Class ATRBasedCandleRangeStrategyRule
                                                 End If
                                         End Select
                                     ElseIf _stockType = Trade.TypeOfStock.Futures Then
-                                        Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
-                                        If capitalRequired < CapitalToBeUsed Then
-                                            entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                        If _firstEntryQuantity = 0 Then
+                                            Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
+                                            If capitalRequired < CapitalToBeUsed Then
+                                                entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                            End If
+                                            _firstEntryQuantity = entryData.SellQuantity
+                                        Else
+                                            entryData.SellQuantity = _firstEntryQuantity
                                         End If
                                     End If
                                     supporting1 = signalCandle.PayloadDate.ToShortTimeString

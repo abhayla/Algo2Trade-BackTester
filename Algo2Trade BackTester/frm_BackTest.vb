@@ -230,7 +230,7 @@ Public Class frm_BackTest
                             For countBreakevenTrades As Integer = 0 To 0 Step 1
                                 If trlng = 0 And countBreakevenTrades = 1 Then Continue For
                                 For overAllLoss As Decimal = 30000 To 40000 Step 10000
-                                    For nmbrOfTrade As Integer = 6 To 6 Step 1
+                                    For nmbrOfTrade As Integer = 7 To 8 Step 1
                                         Using backtestStrategy As New GenericStrategy(canceller:=cts,
                                                                                         tickSize:=0.05,
                                                                                         eodExitTime:=TimeSpan.Parse("15:15:00"),
@@ -244,9 +244,9 @@ Public Class frm_BackTest
                                             AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
 
                                             With backtestStrategy
-                                                .InitialCapital = 300000
-                                                .CapitalForPumpIn = 200000
-                                                .MinimumEarnedCapitalToWithdraw = 400000
+                                                .InitialCapital = 500000
+                                                .CapitalForPumpIn = 400000
+                                                .MinimumEarnedCapitalToWithdraw = 600000
                                                 .AmountToBeWithdrawn = 100000
 
                                                 .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
