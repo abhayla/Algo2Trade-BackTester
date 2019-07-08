@@ -229,7 +229,7 @@ Public Class frm_BackTest
                             If trlng = 0 And smdirectiocEntry = 1 Then Continue For
                             For countBreakevenTrades As Integer = 0 To 0 Step 1
                                 If trlng = 0 And countBreakevenTrades = 1 Then Continue For
-                                For stockLoss As Decimal = 30000 To 40000 Step 10000
+                                For overAllLoss As Decimal = 30000 To 40000 Step 10000
                                     For nmbrOfTrade As Integer = 6 To 6 Step 1
                                         Using backtestStrategy As New GenericStrategy(canceller:=cts,
                                                                                         tickSize:=0.05,
@@ -284,7 +284,7 @@ Public Class frm_BackTest
                                                 .StockMaxLossPerDay = Decimal.MinValue
                                                 .ExitOnOverAllFixedTargetStoploss = True
                                                 .OverAllProfitPerDay = Decimal.MaxValue
-                                                .OverAllLossPerDay = stockLoss * -1
+                                                .OverAllLossPerDay = overAllLoss * -1
                                             End With
                                             Await backtestStrategy.TestStrategyAsync(tradeStartDate, tradeEndDate).ConfigureAwait(False)
                                         End Using
