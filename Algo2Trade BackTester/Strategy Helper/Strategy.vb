@@ -1045,25 +1045,26 @@ Public MustInherit Class Strategy
     '    End If
     '    Return ret
     'End Function
-    Public Function CalculateLogicalTrailingSL(ByVal currentTrade As Trade, ByVal currentLTP As Double, ByVal currentLTPTime As Date, ByVal breakevenPoints As Decimal, ByRef movementRemarks As String) As Double
+    Public Function CalculateLogicalTrailingSL(ByVal currentTrade As Trade, ByVal currentLTP As Double, ByVal currentLTPTime As Date, ByRef movementRemarks As String) As Double
         Dim ret As Double = Nothing
         Dim entryPrice As Decimal = currentTrade.EntryPrice
         Dim squareOffValue As Decimal = currentTrade.SquareOffValue
         Dim tradeDirection As Trade.TradeExecutionDirection = currentTrade.EntryDirection
         Dim gain As Double = Math.Abs(currentLTP - entryPrice)
         Dim targetToAchive As Decimal = Decimal.MinValue
+        Dim breakevenPoints As Decimal = GetBreakevenPoints(currentTrade)
         ret = currentTrade.PotentialStopLoss
         If tradeDirection = Trade.TradeExecutionDirection.Buy Then
             targetToAchive = (currentTrade.PotentialTarget - currentTrade.EntryPrice) * 2 / 3
             If gain >= targetToAchive Then
                 ret = entryPrice + breakevenPoints
-                movementRemarks = String.Format("Move to breakeven at {0}", currentLTPTime.ToString("HH:mm:ss"))
+                movementRemarks = String.Format("Move to breakeven point {0} at {1}", breakevenPoints, currentLTPTime.ToString("HH:mm:ss"))
             End If
         ElseIf tradeDirection = Trade.TradeExecutionDirection.Sell Then
             targetToAchive = (currentTrade.EntryPrice - currentTrade.PotentialTarget) * 2 / 3
             If gain >= targetToAchive Then
                 ret = entryPrice - breakevenPoints
-                movementRemarks = String.Format("Move to breakeven at {0}", currentLTPTime.ToString("HH:mm:ss"))
+                movementRemarks = String.Format("Move to breakeven point {0} at {1}", breakevenPoints, currentLTPTime.ToString("HH:mm:ss"))
             End If
         End If
         Return ret
@@ -1096,6 +1097,29 @@ Public MustInherit Class Strategy
                 movement = (gain - (slab * 100) - If((gain * 100) Mod -10 = -10, 0, (gain * 100) Mod -10) / 100) / 100
                 ret = entryPrice - entryPrice * (movement * -1)
                 movementRemarks = String.Format("Onward Move({0})", movement * -1 / (slab / 10))
+            End If
+        End If
+        Return ret
+    End Function
+
+    Public Function GetBreakevenPoints(ByVal currentTrade As Trade) As Decimal
+        Dim ret As Decimal = 0
+        If currentTrade IsNot Nothing Then
+            ret = currentTrade.EntryPrice
+            If currentTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
+                For ret = currentTrade.EntryPrice To Decimal.MaxValue Step TickSize
+                    Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, currentTrade.EntryPrice, ret, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
+                    If pl >= 0 Then
+                        Exit For
+                    End If
+                Next
+            ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
+                For ret = currentTrade.EntryPrice To Decimal.MaxValue Step TickSize * -1
+                    Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, ret, currentTrade.EntryPrice, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
+                    If pl >= 0 Then
+                        Exit For
+                    End If
+                Next
             End If
         End If
         Return ret
