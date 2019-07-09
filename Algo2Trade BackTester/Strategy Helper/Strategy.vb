@@ -1056,14 +1056,14 @@ Public MustInherit Class Strategy
         If tradeDirection = Trade.TradeExecutionDirection.Buy Then
             targetToAchive = (currentTrade.PotentialTarget - currentTrade.EntryPrice) * 2 / 3
             If gain >= targetToAchive Then
-                Dim breakevenPoints As Decimal = GetBreakevenPoints(currentTrade)
+                Dim breakevenPoints As Decimal = GetBreakevenPoints(currentTrade.TradingSymbol, currentTrade.EntryPrice, currentTrade.Quantity, currentTrade.EntryDirection)
                 ret = entryPrice + breakevenPoints
                 movementRemarks = String.Format("Move to breakeven point {0} at {1}", breakevenPoints, currentLTPTime.ToString("HH:mm:ss"))
             End If
         ElseIf tradeDirection = Trade.TradeExecutionDirection.Sell Then
             targetToAchive = (currentTrade.EntryPrice - currentTrade.PotentialTarget) * 2 / 3
             If gain >= targetToAchive Then
-                Dim breakevenPoints As Decimal = GetBreakevenPoints(currentTrade)
+                Dim breakevenPoints As Decimal = GetBreakevenPoints(currentTrade.TradingSymbol, currentTrade.EntryPrice, currentTrade.Quantity, currentTrade.EntryDirection)
                 ret = entryPrice - breakevenPoints
                 movementRemarks = String.Format("Move to breakeven point {0} at {1}", breakevenPoints, currentLTPTime.ToString("HH:mm:ss"))
             End If
@@ -1103,26 +1103,24 @@ Public MustInherit Class Strategy
         Return ret
     End Function
 
-    Public Function GetBreakevenPoints(ByVal currentTrade As Trade) As Decimal
+    Public Shared Function GetBreakevenPoints(ByVal tradingSymbol As String, ByVal entryPrice As Decimal, ByVal quantity As Integer, ByVal direction As Trade.TradeExecutionDirection) As Decimal
         Dim ret As Decimal = TickSize
-        If currentTrade IsNot Nothing Then
-            If currentTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
-                For exitPrice As Decimal = currentTrade.EntryPrice To Decimal.MaxValue Step ret
-                    Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, currentTrade.EntryPrice, exitPrice, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
-                    If pl >= 0 Then
-                        ret = Math.Round(exitPrice - currentTrade.EntryPrice, 2)
-                        Exit For
-                    End If
-                Next
-            ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
-                For exitPrice As Decimal = currentTrade.EntryPrice To Decimal.MinValue Step ret * -1
-                    Dim pl As Decimal = CalculatePL(currentTrade.TradingSymbol, exitPrice, currentTrade.EntryPrice, currentTrade.Quantity, 1, Trade.TypeOfStock.Futures)
-                    If pl >= 0 Then
-                        ret = Math.Round(currentTrade.EntryPrice - exitPrice, 2)
-                        Exit For
-                    End If
-                Next
-            End If
+        If direction = Trade.TradeExecutionDirection.Buy Then
+            For exitPrice As Decimal = entryPrice To Decimal.MaxValue Step ret
+                Dim pl As Decimal = CalculatePL(tradingSymbol, entryPrice, exitPrice, quantity, 1, Trade.TypeOfStock.Futures)
+                If pl >= 0 Then
+                    ret = Math.Round(exitPrice - entryPrice, 2)
+                    Exit For
+                End If
+            Next
+        ElseIf direction = Trade.TradeExecutionDirection.Sell Then
+            For exitPrice As Decimal = entryPrice To Decimal.MinValue Step ret * -1
+                Dim pl As Decimal = CalculatePL(tradingSymbol, exitPrice, entryPrice, quantity, 1, Trade.TypeOfStock.Futures)
+                If pl >= 0 Then
+                    ret = Math.Round(entryPrice - exitPrice, 2)
+                    Exit For
+                End If
+            Next
         End If
         Return ret
     End Function

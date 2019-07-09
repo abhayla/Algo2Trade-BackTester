@@ -91,9 +91,30 @@ Public Class ATRBasedCandleRangeStrategyRule
                         If potentialHighEntryPrice = 0 AndAlso potentialLowEntryPrice = 0 Then
                             If _inputPayload(runningPayload).CandleRange <> 0 AndAlso
                                 _inputPayload(runningPayload).CandleRange <= ATRPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) Then
-                                signalCandle = _inputPayload(runningPayload)
-                                potentialHighEntryPrice = _inputPayload(runningPayload).High
-                                potentialLowEntryPrice = _inputPayload(runningPayload).Low
+                                Dim buyQuantity As Integer = _quantity
+                                Dim potentialBuyEntry As Decimal = _inputPayload(runningPayload).High
+                                potentialBuyEntry += CalculateBuffer(potentialBuyEntry, RoundOfType.Floor)
+                                Dim buyCapitalRequired As Decimal = potentialBuyEntry * buyQuantity / Strategy.MarginMultiplier
+                                If buyCapitalRequired < CapitalToBeUsed Then
+                                    buyQuantity = Math.Ceiling(CapitalToBeUsed / buyCapitalRequired) * _quantity
+                                End If
+
+                                Dim sellQuantity As Integer = _quantity
+                                Dim potentialSellEntry As Decimal = _inputPayload(runningPayload).Low
+                                potentialSellEntry -= CalculateBuffer(potentialSellEntry, RoundOfType.Floor)
+                                Dim sellCapitalRequired As Decimal = potentialSellEntry * sellQuantity / Strategy.MarginMultiplier
+                                If sellCapitalRequired < CapitalToBeUsed Then
+                                    sellQuantity = Math.Ceiling(CapitalToBeUsed / sellCapitalRequired) * _quantity
+                                End If
+
+                                Dim buyBreakeven As Decimal = Strategy.GetBreakevenPoints(tradingSymbol, potentialBuyEntry, buyQuantity, Trade.TradeExecutionDirection.Buy)
+                                Dim sellBreakeven As Decimal = Strategy.GetBreakevenPoints(tradingSymbol, potentialSellEntry, sellQuantity, Trade.TradeExecutionDirection.Sell)
+
+                                If _inputPayload(runningPayload).CandleRange >= buyBreakeven AndAlso _inputPayload(runningPayload).CandleRange >= sellBreakeven Then
+                                    signalCandle = _inputPayload(runningPayload)
+                                    potentialHighEntryPrice = _inputPayload(runningPayload).High
+                                    potentialLowEntryPrice = _inputPayload(runningPayload).Low
+                                End If
                             End If
                         Else
                             Dim highBuffer As Decimal = CalculateBuffer(potentialHighEntryPrice, Utilities.Numbers.NumberManipulation.RoundOfType.Floor)
@@ -186,7 +207,7 @@ Public Class ATRBasedCandleRangeStrategyRule
                                         entryData.SellQuantity = _firstEntryQuantity
                                     End If
                                 End If
-                                    supporting1 = signalCandle.PayloadDate.ToShortTimeString
+                                supporting1 = signalCandle.PayloadDate.ToShortTimeString
                                 supporting2 = signalCandle.CandleRange
                                 supporting3 = ATRPayload(signalCandle.PreviousCandlePayload.PayloadDate)
                                 firstTradeEnterd = True
