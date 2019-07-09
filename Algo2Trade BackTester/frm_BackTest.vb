@@ -230,7 +230,7 @@ Public Class frm_BackTest
                             For countBreakevenTrades As Integer = 0 To 0 Step 1
                                 If trlng = 0 And countBreakevenTrades = 1 Then Continue For
                                 For overAllLoss As Decimal = 30000 To 40000 Step 10000
-                                    For nmbrOfTrade As Integer = 7 To 8 Step 1
+                                    For nmbrOfTrade As Integer = 6 To 10 Step 1
                                         Using backtestStrategy As New GenericStrategy(canceller:=cts,
                                                                                         tickSize:=0.05,
                                                                                         eodExitTime:=TimeSpan.Parse("15:15:00"),
