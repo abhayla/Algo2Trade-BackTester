@@ -125,6 +125,30 @@ Namespace My
                 Me("IndicatorStockName") = value
             End Set
         End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("False")>  _
+        Public Property DataSourceDatabase() As Boolean
+            Get
+                Return CType(Me("DataSourceDatabase"),Boolean)
+            End Get
+            Set
+                Me("DataSourceDatabase") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("False")>  _
+        Public Property DataSourceLive() As Boolean
+            Get
+                Return CType(Me("DataSourceLive"),Boolean)
+            End Get
+            Set
+                Me("DataSourceLive") = value
+            End Set
+        End Property
     End Class
 End Namespace
 

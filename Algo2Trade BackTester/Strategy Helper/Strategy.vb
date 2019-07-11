@@ -55,6 +55,14 @@ Public MustInherit Class Strategy
     Const EXCHANGE_END_TIME As String = "15:30:00"
 #End Region
 
+#Region "Enum"
+    Enum SourceOfData
+        Live = 1
+        Database
+        None
+    End Enum
+#End Region
+
 #Region "Protected Variables"
     Protected Canceller As CancellationTokenSource
     Protected Cmn As Common = New Common(Canceller)
@@ -68,6 +76,8 @@ Public MustInherit Class Strategy
 #End Region
 
 #Region "Property"
+    Public Property DataSource As SourceOfData = SourceOfData.Database
+    Public Property IncludeSlipage As Boolean = False
     Public Property InitialCapital As Decimal = Decimal.MaxValue
     Public Property CapitalForPumpIn As Decimal = Decimal.MaxValue
     Public Property MinimumEarnedCapitalToWithdraw As Decimal = Decimal.MaxValue
@@ -548,7 +558,7 @@ Public MustInherit Class Strategy
     '    If ret Then SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
     '    Return ret
     'End Function
-    Public Function EnterTradeIfPossible(ByVal currentTrade As Trade, ByVal currentPayload As Payload, Optional ByVal reverseSignalExitOnly As Boolean = False) As Boolean
+    Public Function EnterTradeIfPossible(ByVal currentTrade As Trade, ByVal currentPayload As Payload, Optional ByVal forwardPayloads As List(Of Payload) = Nothing, Optional ByVal reverseSignalExitOnly As Boolean = False) As Boolean
         Dim ret As Boolean = False
         Dim reverseSignalExit As Boolean = False
         If currentTrade Is Nothing OrElse currentTrade.TradeCurrentStatus <> Trade.TradeExecutionStatus.Open Then Throw New ApplicationException("Supplied trade is not open, cannot enter")
@@ -1291,38 +1301,40 @@ Public MustInherit Class Strategy
 #Region "Deserialize"
     Public Function Deserialize(ByVal inputFilePath As String, ByVal retryCounter As Integer) As Dictionary(Of Date, Dictionary(Of String, List(Of Trade)))
         Dim ret As Dictionary(Of Date, Dictionary(Of String, List(Of Trade))) = Nothing
-        Using stream As New FileStream(inputFilePath, FileMode.Open)
-            Dim binaryFormatter = New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
-            Dim counter As Integer = 0
-            Dim totalSize As Long = 0
-            While stream.Position <> stream.Length
-                If totalSize <> 0 Then OnHeartbeat(String.Format("Deserializing Trades collection {0}/{1} Retry Counter:{2}", counter, totalSize, retryCounter))
-                Dim temp As KeyValuePair(Of Date, Dictionary(Of String, List(Of Trade))) = Nothing
-                Dim tempData As Dictionary(Of Date, Dictionary(Of String, List(Of Trade))) = binaryFormatter.Deserialize(stream)
-                For Each runningDate In tempData.Keys
-                    Dim stockData As Dictionary(Of String, List(Of Trade)) = Nothing
-                    For Each stock In tempData(runningDate).Keys
-                        Dim tradeList As List(Of Trade) = tempData(runningDate)(stock).FindAll(Function(x)
-                                                                                                   Return x.TradeCurrentStatus <> Trade.TradeExecutionStatus.Cancel
-                                                                                               End Function)
-                        If tradeList IsNot Nothing AndAlso tradeList.Count > 0 Then
-                            If stockData Is Nothing Then stockData = New Dictionary(Of String, List(Of Trade))
-                            stockData.Add(stock, tradeList)
+        If inputFilePath IsNot Nothing AndAlso File.Exists(inputFilePath) Then
+            Using stream As New FileStream(inputFilePath, FileMode.Open)
+                Dim binaryFormatter = New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
+                Dim counter As Integer = 0
+                Dim totalSize As Long = 0
+                While stream.Position <> stream.Length
+                    If totalSize <> 0 Then OnHeartbeat(String.Format("Deserializing Trades collection {0}/{1} Retry Counter:{2}", counter, totalSize, retryCounter))
+                    Dim temp As KeyValuePair(Of Date, Dictionary(Of String, List(Of Trade))) = Nothing
+                    Dim tempData As Dictionary(Of Date, Dictionary(Of String, List(Of Trade))) = binaryFormatter.Deserialize(stream)
+                    For Each runningDate In tempData.Keys
+                        Dim stockData As Dictionary(Of String, List(Of Trade)) = Nothing
+                        For Each stock In tempData(runningDate).Keys
+                            Dim tradeList As List(Of Trade) = tempData(runningDate)(stock).FindAll(Function(x)
+                                                                                                       Return x.TradeCurrentStatus <> Trade.TradeExecutionStatus.Cancel
+                                                                                                   End Function)
+                            If tradeList IsNot Nothing AndAlso tradeList.Count > 0 Then
+                                If stockData Is Nothing Then stockData = New Dictionary(Of String, List(Of Trade))
+                                stockData.Add(stock, tradeList)
+                            End If
+                        Next
+                        If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                            temp = New KeyValuePair(Of Date, Dictionary(Of String, List(Of Trade)))(runningDate, stockData)
+                            If ret Is Nothing Then
+                                ret = New Dictionary(Of Date, Dictionary(Of String, List(Of Trade)))
+                                totalSize = Math.Ceiling(stream.Length / stream.Position)
+                            End If
+                            ret.Add(temp.Key, temp.Value)
                         End If
                     Next
-                    If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
-                        temp = New KeyValuePair(Of Date, Dictionary(Of String, List(Of Trade)))(runningDate, stockData)
-                        If ret Is Nothing Then
-                            ret = New Dictionary(Of Date, Dictionary(Of String, List(Of Trade)))
-                            totalSize = Math.Ceiling(stream.Length / stream.Position)
-                        End If
-                        ret.Add(temp.Key, temp.Value)
-                    End If
-                Next
-                counter += 1
-            End While
-            Return ret
-        End Using
+                    counter += 1
+                End While
+                Return ret
+            End Using
+        End If
     End Function
 #End Region
 
@@ -1332,7 +1344,7 @@ Public MustInherit Class Strategy
             Try
                 Dim allTradesData As Dictionary(Of Date, Dictionary(Of String, List(Of Trade))) = Nothing
                 Dim allCapitalData As Dictionary(Of Date, List(Of Capital)) = Nothing
-                If tradesFilename IsNot Nothing AndAlso capitalFileName IsNot Nothing Then
+                If tradesFilename IsNot Nothing AndAlso capitalFileName IsNot Nothing AndAlso File.Exists(tradesFilename) AndAlso File.Exists(capitalFileName) Then
                     OnHeartbeat("Deserializing Trades collections")
                     allTradesData = Deserialize(tradesFilename, retryCounter)
                     OnHeartbeat("Deserializing Capital collections")
@@ -1899,6 +1911,8 @@ Public MustInherit Class Strategy
 
                     If tradesFilename IsNot Nothing AndAlso File.Exists(tradesFilename) Then File.Delete(tradesFilename)
                     If capitalFileName IsNot Nothing AndAlso File.Exists(capitalFileName) Then File.Delete(capitalFileName)
+                    Exit For
+                Else
                     Exit For
                 End If
             Catch ex As System.OutOfMemoryException

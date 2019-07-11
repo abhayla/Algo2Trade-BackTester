@@ -633,7 +633,7 @@ Public Class SpreadStrategy
                                         Dim potentialEntryTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Open)
                                         If potentialEntryTrades IsNot Nothing AndAlso potentialEntryTrades.Count > 0 Then
                                             For Each potentialEntryTrade In potentialEntryTrades
-                                                If EnterTradeIfPossible(potentialEntryTrade, tick, True) Then
+                                                If EnterTradeIfPossible(potentialEntryTrade, tick, Nothing, True) Then
                                                     Console.WriteLine("")
                                                     'If NumberOfTradesPerDay(currentMinuteCandlePayload.PayloadDate) = 1 Then
                                                     '    Dim potentialPL As Decimal = Decimal.MinValue

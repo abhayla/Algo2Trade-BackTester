@@ -1,6 +1,9 @@
-﻿Imports System.Threading
+﻿Imports System.IO
+Imports System.Net
+Imports System.Threading
 Imports MySql.Data.MySqlClient
 Imports Utilities.DAL
+Imports Utilities.Strings
 
 Public Class Common
     Implements IDisposable
@@ -580,6 +583,107 @@ Public Class Common
         End If
         Return lotSize
     End Function
+    Public Function GetCurrentTradingSymbolWithInstrumentToken(ByVal tableName As DataBaseTable, ByVal tradingDate As Date, ByVal rawInstrumentName As String) As Tuple(Of String, String)
+        Dim ret As Tuple(Of String, String) = Nothing
+        Dim dt As DataTable = Nothing
+        Dim conn As MySqlConnection = OpenDBConnection()
+        Dim cm As MySqlCommand = Nothing
+        Dim activeInstruments As List(Of ActiveInstrumentData) = Nothing
+
+        Select Case tableName
+            Case DataBaseTable.Intraday_Cash, DataBaseTable.EOD_Cash
+                cm = New MySqlCommand("SELECT `INSTRUMENT_TOKEN`,`TRADING_SYMBOL`,`EXPIRY` FROM `active_instruments_cash` WHERE `TRADING_SYMBOL` LIKE @trd AND `AS_ON_DATE`=@sd", conn)
+            Case DataBaseTable.Intraday_Currency, DataBaseTable.EOD_Currency
+                cm = New MySqlCommand("SELECT `INSTRUMENT_TOKEN`,`TRADING_SYMBOL`,`EXPIRY` FROM `active_instruments_currency` WHERE `TRADING_SYMBOL` LIKE @trd AND `AS_ON_DATE`=@sd", conn)
+            Case DataBaseTable.Intraday_Commodity, DataBaseTable.EOD_Commodity
+                cm = New MySqlCommand("SELECT `INSTRUMENT_TOKEN`,`TRADING_SYMBOL`,`EXPIRY` FROM `active_instruments_commodity` WHERE `TRADING_SYMBOL` LIKE @trd AND `AS_ON_DATE`=@sd", conn)
+            Case DataBaseTable.Intraday_Futures, DataBaseTable.EOD_Futures
+                cm = New MySqlCommand("SELECT `INSTRUMENT_TOKEN`,`TRADING_SYMBOL`,`EXPIRY` FROM `active_instruments_futures` WHERE `TRADING_SYMBOL` LIKE @trd AND `AS_ON_DATE`=@sd", conn)
+        End Select
+
+        OnHeartbeat(String.Format("Fetching required data from DataBase for {0} on {1}", rawInstrumentName, tradingDate.ToShortDateString))
+
+        cm.Parameters.AddWithValue("@trd", String.Format("{0}%", rawInstrumentName))
+        cm.Parameters.AddWithValue("@sd", tradingDate.Date.ToString("yyyy-MM-dd"))
+        Dim adapter As New MySqlDataAdapter(cm)
+        adapter.SelectCommand.CommandTimeout = 300
+        dt = New DataTable()
+        adapter.Fill(dt)
+        If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
+            For i = 0 To dt.Rows.Count - 1
+                Dim instrumentData As New ActiveInstrumentData With
+                        {.Token = dt.Rows(i).Item(0),
+                         .TradingSymbol = dt.Rows(i).Item(1).ToString.ToUpper,
+                         .Expiry = dt.Rows(i).Item(2)}
+                If activeInstruments Is Nothing Then activeInstruments = New List(Of ActiveInstrumentData)
+                activeInstruments.Add(instrumentData)
+            Next
+        End If
+        If activeInstruments IsNot Nothing AndAlso activeInstruments.Count > 0 Then
+            Dim minExipry As Date = activeInstruments.Min(Function(x)
+                                                              If x.Expiry.Date = Now.Date Then
+                                                                  Return Date.MaxValue
+                                                              Else
+                                                                  Return x.Expiry
+                                                              End If
+                                                          End Function)
+            Dim currentInstrument As ActiveInstrumentData = activeInstruments.Find(Function(x)
+                                                                                       Return x.Expiry = minExipry
+                                                                                   End Function)
+            ret = New Tuple(Of String, String)(currentInstrument.Token, currentInstrument.TradingSymbol)
+        End If
+        Return ret
+    End Function
+
+    Public Async Function GetHistoricalData(ByVal tableName As DataBaseTable, ByVal rawInstrumentName As String, ByVal currentDate As Date) As Task(Of Dictionary(Of Date, Payload))
+        Dim ret As Dictionary(Of Date, Payload) = Nothing
+        Dim instrumentToken As String = Nothing
+        Dim tradingSymbol As String = Nothing
+        Dim ZerodhaHistoricalURL As String = "https://kitecharts-aws.zerodha.com/api/chart/{0}/minute?api_key=kitefront&access_token=K&from={1}&to={2}"
+        Dim instrument As Tuple(Of String, String) = GetCurrentTradingSymbolWithInstrumentToken(tableName, currentDate, rawInstrumentName)
+        If instrument IsNot Nothing Then
+            instrumentToken = instrument.Item1
+            tradingSymbol = instrument.Item2
+        End If
+        If instrumentToken IsNot Nothing AndAlso instrumentToken <> "" Then
+            Dim historicalDataURL As String = String.Format(ZerodhaHistoricalURL, instrumentToken, currentDate.AddDays(-7).ToString("yyyy-MM-dd"), currentDate.ToString("yyyy-MM-dd"))
+            OnHeartbeat(String.Format("Fetching historical Data: {0}", historicalDataURL))
+            Dim historicalCandlesJSONDict As Dictionary(Of String, Object) = Nothing
+            Using sr As New StreamReader(HttpWebRequest.Create(historicalDataURL).GetResponseAsync().Result.GetResponseStream)
+                Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
+                historicalCandlesJSONDict = StringManipulation.JsonDeserialize(jsonString)
+            End Using
+            If historicalCandlesJSONDict IsNot Nothing AndAlso historicalCandlesJSONDict.Count > 0 AndAlso
+                historicalCandlesJSONDict.ContainsKey("data") Then
+                Dim historicalCandlesDict As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
+                If historicalCandlesDict.ContainsKey("candles") AndAlso historicalCandlesDict("candles").count > 0 Then
+                    Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
+                    If ret Is Nothing Then ret = New Dictionary(Of Date, Payload)
+                    OnHeartbeat(String.Format("Generating Payload for {0}", tradingSymbol))
+                    Dim previousPayload As Payload = Nothing
+                    For Each historicalCandle In historicalCandles
+                        Dim runningSnapshotTime As Date = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
+
+                        Dim runningPayload As Payload = New Payload(Payload.CandleDataSource.Chart)
+                        With runningPayload
+                            .PayloadDate = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
+                            .TradingSymbol = tradingSymbol
+                            .Open = historicalCandle(1)
+                            .High = historicalCandle(2)
+                            .Low = historicalCandle(3)
+                            .Close = historicalCandle(4)
+                            .Volume = historicalCandle(5)
+                            .PreviousCandlePayload = previousPayload
+                        End With
+                        previousPayload = runningPayload
+                        ret.Add(runningSnapshotTime, runningPayload)
+                    Next
+                End If
+            End If
+        End If
+        Return ret
+    End Function
+
     Public Function CalculateStandardDeviation(ByVal inputPayload As Dictionary(Of Date, Decimal)) As Double
         Dim ret As Double = Nothing
         If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
@@ -777,6 +881,13 @@ Public Class Common
         Public Property L3 As Decimal
         Public Property L4 As Decimal
     End Class
+
+    Private Class ActiveInstrumentData
+        Public Token As String
+        Public TradingSymbol As String
+        Public Expiry As Date
+    End Class
+
 #End Region
 
 #Region "DB Connection"

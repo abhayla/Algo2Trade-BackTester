@@ -33,6 +33,10 @@ Partial Class frm_BackTest
         Me.lblProgressStatus = New System.Windows.Forms.Label()
         Me.btn_cancel = New System.Windows.Forms.Button()
         Me.uc_BackTest = New Algo2Trade_BackTester.uc_BackTest()
+        Me.grpbxDataSource = New System.Windows.Forms.GroupBox()
+        Me.rdbDatabase = New System.Windows.Forms.RadioButton()
+        Me.rdbLive = New System.Windows.Forms.RadioButton()
+        Me.grpbxDataSource.SuspendLayout()
         Me.SuspendLayout()
         '
         'Panel4
@@ -136,12 +140,46 @@ Partial Class frm_BackTest
         Me.uc_BackTest.Size = New System.Drawing.Size(403, 34)
         Me.uc_BackTest.TabIndex = 0
         '
+        'grpbxDataSource
+        '
+        Me.grpbxDataSource.Controls.Add(Me.rdbLive)
+        Me.grpbxDataSource.Controls.Add(Me.rdbDatabase)
+        Me.grpbxDataSource.Location = New System.Drawing.Point(19, 59)
+        Me.grpbxDataSource.Name = "grpbxDataSource"
+        Me.grpbxDataSource.Size = New System.Drawing.Size(187, 57)
+        Me.grpbxDataSource.TabIndex = 21
+        Me.grpbxDataSource.TabStop = False
+        Me.grpbxDataSource.Text = "Data Source"
+        '
+        'rdbDatabase
+        '
+        Me.rdbDatabase.AutoSize = True
+        Me.rdbDatabase.Location = New System.Drawing.Point(7, 23)
+        Me.rdbDatabase.Name = "rdbDatabase"
+        Me.rdbDatabase.Size = New System.Drawing.Size(90, 21)
+        Me.rdbDatabase.TabIndex = 0
+        Me.rdbDatabase.TabStop = True
+        Me.rdbDatabase.Text = "Database"
+        Me.rdbDatabase.UseVisualStyleBackColor = True
+        '
+        'rdbLive
+        '
+        Me.rdbLive.AutoSize = True
+        Me.rdbLive.Location = New System.Drawing.Point(115, 24)
+        Me.rdbLive.Name = "rdbLive"
+        Me.rdbLive.Size = New System.Drawing.Size(55, 21)
+        Me.rdbLive.TabIndex = 1
+        Me.rdbLive.TabStop = True
+        Me.rdbLive.Text = "Live"
+        Me.rdbLive.UseVisualStyleBackColor = True
+        '
         'frm_BackTest
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center
         Me.ClientSize = New System.Drawing.Size(921, 356)
+        Me.Controls.Add(Me.grpbxDataSource)
         Me.Controls.Add(Me.btn_cancel)
         Me.Controls.Add(Me.cmb_strategy)
         Me.Controls.Add(Me.Label1)
@@ -159,6 +197,8 @@ Partial Class frm_BackTest
         Me.MaximizeBox = False
         Me.Name = "frm_BackTest"
         Me.Text = "BackTest"
+        Me.grpbxDataSource.ResumeLayout(False)
+        Me.grpbxDataSource.PerformLayout()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -173,4 +213,7 @@ Partial Class frm_BackTest
     Friend WithEvents btn_start As Button
     Friend WithEvents lblProgressStatus As Label
     Friend WithEvents btn_cancel As Button
+    Friend WithEvents grpbxDataSource As GroupBox
+    Friend WithEvents rdbLive As RadioButton
+    Friend WithEvents rdbDatabase As RadioButton
 End Class

@@ -4,6 +4,7 @@ Imports Algo2TradeBLL
 Imports System.IO
 
 Public Class frm_BackTest
+
 #Region "Common Delegates"
     Delegate Sub SetObjectEnableDisable_Delegate(ByVal [obj] As Object, ByVal [value] As Boolean)
     Public Sub SetObjectEnableDisable_ThreadSafe(ByVal [obj] As Object, ByVal [value] As Boolean)
@@ -161,20 +162,30 @@ Public Class frm_BackTest
     End Sub
 #End Region
 
-    Dim cts As CancellationTokenSource
-    Dim cmn As Common
+    Private _cts As CancellationTokenSource
+    Private _cmn As Common
+    Private _dataSource As Strategy.SourceOfData = Strategy.SourceOfData.None
     Private Sub frm_BackTest_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         btn_cancel.Visible = False
         cmb_strategy.SelectedIndex = My.Settings.BackTest
+        rdbDatabase.Checked = My.Settings.DataSourceDatabase
+        rdbLive.Checked = My.Settings.DataSourceLive
     End Sub
     Private Sub OnHeartbeat(msg As String)
         SetLabelText_ThreadSafe(lblProgressStatus, msg)
     End Sub
     Private Async Sub btn_start_Click(sender As Object, e As EventArgs) Handles btn_start.Click
         My.Settings.BackTest = cmb_strategy.SelectedIndex
+        My.Settings.DataSourceDatabase = rdbDatabase.Checked
+        My.Settings.DataSourceLive = rdbLive.Checked
         My.Settings.Save()
-        cts = New CancellationTokenSource
-        cmn = New Common(cts)
+        If rdbDatabase.Checked Then
+            _dataSource = Strategy.SourceOfData.Database
+        ElseIf rdbLive.Checked Then
+            _dataSource = Strategy.SourceOfData.Live
+        End If
+        _cts = New CancellationTokenSource
+        _cmn = New Common(_cts)
         btn_start.Enabled = False
         Await Task.Run(AddressOf ViewDataAsync).ConfigureAwait(False)
     End Sub
@@ -216,22 +227,22 @@ Public Class frm_BackTest
 
     Private Async Function GenericStrategyAsync(startDate As Date, endDate As Date) As Task
         Dim strategyStockType As Trade.TypeOfStock = Trade.TypeOfStock.Futures
-        Dim tradeStartDate As Date = startDate
-        While tradeStartDate <= endDate
+        Dim tradeStartDate As Date = startDate.Date
+        While tradeStartDate.Date <= endDate.Date
             Dim tradeEndDate As Date '= tradeStartDate.AddMonths(12)
-            tradeEndDate = endDate
+            tradeEndDate = endDate.Date
 
             If endDate.Date < tradeEndDate Then tradeEndDate = endDate
-            For timeframe As Integer = 3 To 3 Step 2
-                For firstTradeMultiplier As Double = 3 To 3 Step 1
+            For timeframe As Integer = 2 To 2 Step 2
+                For firstTradeMultiplier As Double = 4 To 4 Step 1
                     For trlng As Integer = 1 To 1 Step 1
                         For smdirectiocEntry As Integer = 0 To 0 Step 1
                             If trlng = 0 And smdirectiocEntry = 1 Then Continue For
                             For countBreakevenTrades As Integer = 0 To 0 Step 1
                                 If trlng = 0 And countBreakevenTrades = 1 Then Continue For
-                                For overAllLoss As Decimal = 30000 To 40000 Step 10000
-                                    For nmbrOfTrade As Integer = 6 To 10 Step 1
-                                        Using backtestStrategy As New GenericStrategy(canceller:=cts,
+                                For overAllLoss As Decimal = 40000 To 40000 Step 10000
+                                    For nmbrOfTrade As Integer = 8 To 8 Step 1
+                                        Using backtestStrategy As New GenericStrategy(canceller:=_cts,
                                                                                         tickSize:=0.05,
                                                                                         eodExitTime:=TimeSpan.Parse("15:15:00"),
                                                                                         lastTradeEntryTime:=TimeSpan.Parse("14:30:00"),
@@ -244,6 +255,8 @@ Public Class frm_BackTest
                                             AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
 
                                             With backtestStrategy
+                                                .DataSource = _dataSource
+
                                                 .InitialCapital = 500000
                                                 .CapitalForPumpIn = 400000
                                                 .MinimumEarnedCapitalToWithdraw = 600000
@@ -256,7 +269,7 @@ Public Class frm_BackTest
                                                 .MaxStoplossAmount = 1000
                                                 .FirstTradeTargetMultiplier = firstTradeMultiplier
                                                 .EarlyStoploss = False
-                                                .ForwardTradeTargetMultiplier = 3
+                                                .ForwardTradeTargetMultiplier = firstTradeMultiplier
                                                 .CapitalToBeUsed = 20000
                                                 .CandleBasedEntry = True
 
@@ -442,7 +455,7 @@ Public Class frm_BackTest
     '    Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
     'End Function
     Private Async Function NaughtyBoyStockVWAPStrategyAsync(startDate As Date, endDate As Date) As Task
-        Dim backtestStrategy As NaughtyBoyVWAP = New NaughtyBoyVWAP(cts,
+        Dim backtestStrategy As NaughtyBoyVWAP = New NaughtyBoyVWAP(_cts,
                                                                     0.05,
                                                                     TimeSpan.Parse("15:15:00"),
                                                                     TimeSpan.Parse("15:00:00"),
@@ -463,7 +476,7 @@ Public Class frm_BackTest
         Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
     End Function
     Private Async Function InTheTrendStrategyAsync(startDate As Date, endDate As Date) As Task
-        Dim backtestStrategy As InTheTrend = New InTheTrend(cts,
+        Dim backtestStrategy As InTheTrend = New InTheTrend(_cts,
                                                             0.05,
                                                             TimeSpan.Parse("15:15:00"),
                                                             TimeSpan.Parse("15:00:00"),
@@ -486,7 +499,7 @@ Public Class frm_BackTest
     Private Async Function GapFillStrategyAsync(startDate As Date, endDate As Date) As Task
         For numberOfStock As Integer = 5 To 8
             For useContinuousTrailingSL As Integer = 0 To 1
-                Dim backtestStrategy As GapFill = New GapFill(cts,
+                Dim backtestStrategy As GapFill = New GapFill(_cts,
                                                         0.05,
                                                         TimeSpan.Parse("15:15:00"),
                                                         TimeSpan.Parse("15:00:00"),
@@ -512,7 +525,7 @@ Public Class frm_BackTest
     Private Async Function GapFillWithoutFillingPCStrategyAsync(startDate As Date, endDate As Date) As Task
         For numberOfStock As Integer = 5 To 8
             For useContinuousTrailingSL As Integer = 0 To 1
-                Dim backtestStrategy As GapFillWithoutFillingPC = New GapFillWithoutFillingPC(cts,
+                Dim backtestStrategy As GapFillWithoutFillingPC = New GapFillWithoutFillingPC(_cts,
                                                                                             0.05,
                                                                                             TimeSpan.Parse("15:15:00"),
                                                                                             TimeSpan.Parse("15:00:00"),
@@ -538,7 +551,7 @@ Public Class frm_BackTest
     Private Async Function GapFillWithoutFillingNeglectGnGStrategyAsync(startDate As Date, endDate As Date) As Task
         For numberOfStock As Integer = 5 To 8
             For useContinuousTrailingSL As Integer = 0 To 1
-                Dim backtestStrategy As GapFillWithoutFillingPCNeglectGnG = New GapFillWithoutFillingPCNeglectGnG(cts,
+                Dim backtestStrategy As GapFillWithoutFillingPCNeglectGnG = New GapFillWithoutFillingPCNeglectGnG(_cts,
                                                                                                         0.05,
                                                                                                         TimeSpan.Parse("15:15:00"),
                                                                                                         TimeSpan.Parse("15:00:00"),
@@ -564,7 +577,7 @@ Public Class frm_BackTest
     Private Async Function GapFillWithoutFillingPHLCStrategyAsync(startDate As Date, endDate As Date) As Task
         For numberOfStock As Integer = 5 To 8
             For useContinuousTrailingSL As Integer = 0 To 1
-                Dim backtestStrategy As GapFillWithoutFillingPHLC = New GapFillWithoutFillingPHLC(cts,
+                Dim backtestStrategy As GapFillWithoutFillingPHLC = New GapFillWithoutFillingPHLC(_cts,
                                                                                             0.05,
                                                                                             TimeSpan.Parse("15:15:00"),
                                                                                             TimeSpan.Parse("15:00:00"),
@@ -588,7 +601,7 @@ Public Class frm_BackTest
         Next
     End Function
     Private Async Function PairHazingStrategyAsync(startDate As Date, endDate As Date) As Task
-        Dim backtestStrategy As SpreadStrategy = New SpreadStrategy(canceller:=cts,
+        Dim backtestStrategy As SpreadStrategy = New SpreadStrategy(canceller:=_cts,
                                                                       tickSize:=0.05,
                                                                       eodExitTime:=TimeSpan.Parse("15:15:00"),
                                                                       lastTradeEntryTime:=TimeSpan.Parse("14:30:00"),
@@ -614,7 +627,7 @@ Public Class frm_BackTest
         Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
     End Function
     Private Async Function MarutiStrategyAsync(startDate As Date, endDate As Date) As Task
-        Dim backtestStrategy As MarutiStrategy = New MarutiStrategy(canceller:=cts,
+        Dim backtestStrategy As MarutiStrategy = New MarutiStrategy(canceller:=_cts,
                                                                       tickSize:=0.05,
                                                                       eodExitTime:=TimeSpan.Parse("15:15:00"),
                                                                       lastTradeEntryTime:=TimeSpan.Parse("15:09:00"),
@@ -629,12 +642,12 @@ Public Class frm_BackTest
 
 #Region "Procedure"
     Private Function GetStockData(tradingDate As Date) As Dictionary(Of String, Decimal())
-        AddHandler cmn.Heartbeat, AddressOf OnHeartbeat
+        AddHandler _cmn.Heartbeat, AddressOf OnHeartbeat
         Dim dt As DataTable = Nothing
-        Dim conn As MySqlConnection = cmn.OpenDBConnection
+        Dim conn As MySqlConnection = _cmn.OpenDBConnection
         Dim ret As Dictionary(Of String, Decimal()) = Nothing
 
-        Dim signalCheckingDate As Date = cmn.GetPreviousTradingDay(Common.DataBaseTable.EOD_Cash, tradingDate.Date)
+        Dim signalCheckingDate As Date = _cmn.GetPreviousTradingDay(Common.DataBaseTable.EOD_Cash, tradingDate.Date)
         If conn.State = ConnectionState.Open Then
             OnHeartbeat("Fetching All Stock Data")
             Dim cmd As New MySqlCommand("GET_STOCK_CASH_DATA_ATR_VOLUME_ALL_DATES", conn)

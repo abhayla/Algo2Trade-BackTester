@@ -122,27 +122,6 @@ Public Class GenericStrategy
                 'stockList = New Dictionary(Of String, Decimal())
                 'stockList.Add("StockName", {Quantity, LotSize})
                 'stockList.Add("CRUDEOIL", {1000, 100})
-                'stockList.Add("JINDALSTEL", {2250, 2250})
-                'stockList.Add("ADANIENT", {4000, 4000})
-                'stockList.Add("ADANIPORTS", {2500, 2500})
-                'stockList.Add("ZEEL", {1300, 1300, 0, 0})
-                'stockList.Add("CRUDEOIL", {100, 100})
-                'stockList.Add("NIFTY", {75, 75})
-                'stockList.Add("BANKNIFTY", {20, 20})
-                'stockList.Add("ONGC", {3750, 3750})
-                'stockList.Add("BPCL", {1800, 1800})
-                'stockList.Add("EICHERMOT", {1, 1})
-                'stockList.Add("UJJIVAN", {1600, 1600, 347.5})
-                'stockList.Add("HINDZINC", {3200, 3200})
-                'stockList.Add("YESBANK", {1750, 1750})
-                'stockList.Add("CANBK", {2000, 2000})
-                'stockList.Add("RELCAPITAL", {1500, 1500})
-                'stockList.Add("TATAMOTORS", {2000, 2000, 0, 0})
-                'stockList.Add("IBULHSGFIN", {500, 500})
-                'stockList.Add("BANKBARODA", {4000, 4000})
-                'stockList.Add("DHFL", {1500, 1500})
-                'stockList.Add("JINDALSTEL", {2250, 2250})
-                'stockList.Add("IRB", {3200, 3200, 0, 0})
 
                 If stockList IsNot Nothing AndAlso stockList.Count > 0 Then
                     Dim currentDayOneMinuteStocksPayload As Dictionary(Of String, Dictionary(Of Date, Payload)) = Nothing
@@ -199,15 +178,19 @@ Public Class GenericStrategy
                             Data.PastIntradayData.ContainsKey(tradeCheckingDate) AndAlso Data.PastIntradayData(tradeCheckingDate).ContainsKey(stock) Then
                             XDayOneMinutePayload = Data.PastIntradayData(tradeCheckingDate)(stock)
                         Else
-                            XDayOneMinutePayload = Cmn.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                            If Me.DataSource = SourceOfData.Database Then
+                                XDayOneMinutePayload = Cmn.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                            ElseIf Me.DataSource = SourceOfData.Live Then
+                                XDayOneMinutePayload = Await Cmn.GetHistoricalData(_DatabaseTable, stock, tradeCheckingDate).ConfigureAwait(False)
+                            End If
                             'If XDayOneMinutePayload IsNot Nothing Then
                             '    If stockData Is Nothing Then stockData = New Dictionary(Of String, Dictionary(Of Date, Payload))
                             '    stockData.Add(stock, XDayOneMinutePayload)
                             'End If
                         End If
 
-                        'Now transfer only the current date payload into the workable payload (this will be used for the main loop and checking if the date is a valid date)
-                        If XDayOneMinutePayload IsNot Nothing AndAlso XDayOneMinutePayload.Count > 0 Then
+                            'Now transfer only the current date payload into the workable payload (this will be used for the main loop and checking if the date is a valid date)
+                            If XDayOneMinutePayload IsNot Nothing AndAlso XDayOneMinutePayload.Count > 0 Then
                             OnHeartbeat(String.Format("Processing for {0} on {1}. Stock Counter: [ {2}/{3} ]", stock, tradeCheckingDate.ToShortDateString, stockCount, stockList.Count))
                             For Each runningPayload In XDayOneMinutePayload.Keys
                                 If runningPayload.Date = tradeCheckingDate.Date Then
