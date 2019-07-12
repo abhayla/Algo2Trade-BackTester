@@ -198,23 +198,23 @@ Public Class frm_BackTest
                 Case 0
                 'Await FractalMACandleRetracementStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 1
-                    Await NaughtyBoyStockVWAPStrategyAsync(startDate, endDate).ConfigureAwait(False)
+                    'Await NaughtyBoyStockVWAPStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 2
-                    Await InTheTrendStrategyAsync(startDate, endDate).ConfigureAwait(False)
+                    'Await InTheTrendStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 3
-                    Await GapFillStrategyAsync(startDate, endDate).ConfigureAwait(False)
+                    'Await GapFillStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 4
-                    Await GapFillWithoutFillingPCStrategyAsync(startDate, endDate).ConfigureAwait(False)
+                    'Await GapFillWithoutFillingPCStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 5
-                    Await GapFillWithoutFillingNeglectGnGStrategyAsync(startDate, endDate).ConfigureAwait(False)
+                    'Await GapFillWithoutFillingNeglectGnGStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 6
-                    Await GapFillWithoutFillingPHLCStrategyAsync(startDate, endDate).ConfigureAwait(False)
+                    'Await GapFillWithoutFillingPHLCStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 7
                     Await GenericStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 8
-                    Await MarutiStrategyAsync(startDate, endDate).ConfigureAwait(False)
+                    'Await MarutiStrategyAsync(startDate, endDate).ConfigureAwait(False)
                 Case 9
-                    Await PairHazingStrategyAsync(startDate, endDate).ConfigureAwait(False)
+                    'Await PairHazingStrategyAsync(startDate, endDate).ConfigureAwait(False)
             End Select
         Catch ex As Exception
             MsgBox(ex.Message)
@@ -257,8 +257,8 @@ Public Class frm_BackTest
                                             With backtestStrategy
                                                 .DataSource = _dataSource
 
-                                                .IncludeSlipage = True
-                                                .SlipageMultiplier = 1
+                                                .IncludeSlippage = True
+                                                .SlippageMultiplier = 1
                                                 .InitialCapital = 500000
                                                 .CapitalForPumpIn = 400000
                                                 .MinimumEarnedCapitalToWithdraw = 600000
@@ -442,204 +442,204 @@ Public Class frm_BackTest
 #End Region
 
 #Region "Other Strategy"
-    'Private Async Function FractalMACandleRetracementStrategyAsync(startDate As Date, endDate As Date) As Task
-    '    Dim backtestStrategy As FractalMACandleRetrace = New FractalMACandleRetrace(cts,
-    '                                                                                0.05,
-    '                                                                                TimeSpan.Parse("15:15:00"),
-    '                                                                                TimeSpan.Parse("15:00:00"),
-    '                                                                                TimeSpan.Parse("09:15:00"),
-    '                                                                                TimeSpan.Parse("15:30:00"),
-    '                                                                                50)
-    '    AddHandler backtestStrategy.Heartbeat, AddressOf test_Heartbeat
-    '    backtestStrategy.SpikeChangePercentageOfStockForPreMarketVolumeSpikeScreener = 100
-    '    backtestStrategy.NumberOfDaysForNRxScreener = 5
-    '    backtestStrategy.NumberOfTradeableStock = 1
+    ''Private Async Function FractalMACandleRetracementStrategyAsync(startDate As Date, endDate As Date) As Task
+    ''    Dim backtestStrategy As FractalMACandleRetrace = New FractalMACandleRetrace(cts,
+    ''                                                                                0.05,
+    ''                                                                                TimeSpan.Parse("15:15:00"),
+    ''                                                                                TimeSpan.Parse("15:00:00"),
+    ''                                                                                TimeSpan.Parse("09:15:00"),
+    ''                                                                                TimeSpan.Parse("15:30:00"),
+    ''                                                                                50)
+    ''    AddHandler backtestStrategy.Heartbeat, AddressOf test_Heartbeat
+    ''    backtestStrategy.SpikeChangePercentageOfStockForPreMarketVolumeSpikeScreener = 100
+    ''    backtestStrategy.NumberOfDaysForNRxScreener = 5
+    ''    backtestStrategy.NumberOfTradeableStock = 1
+    ''    Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
+    ''End Function
+    'Private Async Function NaughtyBoyStockVWAPStrategyAsync(startDate As Date, endDate As Date) As Task
+    '    Dim backtestStrategy As NaughtyBoyVWAP = New NaughtyBoyVWAP(_cts,
+    '                                                                0.05,
+    '                                                                TimeSpan.Parse("15:15:00"),
+    '                                                                TimeSpan.Parse("15:00:00"),
+    '                                                                TimeSpan.Parse("09:15:00"),
+    '                                                                TimeSpan.Parse("15:30:00"),
+    '                                                                1,
+    '                                                                2,
+    '                                                                5)
+
+    '    AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
+    '    backtestStrategy.PerTradeMaxProfitPercentage = 1
+    '    backtestStrategy.PerTradeMaxLossPercentage = -0.3
+    '    backtestStrategy.PerStockMaxProfitPercentage = 1.5
+    '    backtestStrategy.PerStockMaxLossPercentage = -0.5
+    '    backtestStrategy.OverAllProfitPerDay = 16000
+    '    backtestStrategy.OverAllLossPerDay = -7000
+    '    backtestStrategy.NumberOfTradeableStockPerDay = 4
     '    Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
     'End Function
-    Private Async Function NaughtyBoyStockVWAPStrategyAsync(startDate As Date, endDate As Date) As Task
-        Dim backtestStrategy As NaughtyBoyVWAP = New NaughtyBoyVWAP(_cts,
-                                                                    0.05,
-                                                                    TimeSpan.Parse("15:15:00"),
-                                                                    TimeSpan.Parse("15:00:00"),
-                                                                    TimeSpan.Parse("09:15:00"),
-                                                                    TimeSpan.Parse("15:30:00"),
-                                                                    1,
-                                                                    2,
-                                                                    5)
+    'Private Async Function InTheTrendStrategyAsync(startDate As Date, endDate As Date) As Task
+    '    Dim backtestStrategy As InTheTrend = New InTheTrend(_cts,
+    '                                                        0.05,
+    '                                                        TimeSpan.Parse("15:15:00"),
+    '                                                        TimeSpan.Parse("15:00:00"),
+    '                                                        TimeSpan.Parse("09:15:00"),
+    '                                                        TimeSpan.Parse("15:30:00"),
+    '                                                        1,
+    '                                                        1,
+    '                                                        5)
 
-        AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
-        backtestStrategy.PerTradeMaxProfitPercentage = 1
-        backtestStrategy.PerTradeMaxLossPercentage = -0.3
-        backtestStrategy.PerStockMaxProfitPercentage = 1.5
-        backtestStrategy.PerStockMaxLossPercentage = -0.5
-        backtestStrategy.OverAllProfitPerDay = 16000
-        backtestStrategy.OverAllLossPerDay = -7000
-        backtestStrategy.NumberOfTradeableStockPerDay = 4
-        Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
-    End Function
-    Private Async Function InTheTrendStrategyAsync(startDate As Date, endDate As Date) As Task
-        Dim backtestStrategy As InTheTrend = New InTheTrend(_cts,
-                                                            0.05,
-                                                            TimeSpan.Parse("15:15:00"),
-                                                            TimeSpan.Parse("15:00:00"),
-                                                            TimeSpan.Parse("09:15:00"),
-                                                            TimeSpan.Parse("15:30:00"),
-                                                            1,
-                                                            1,
-                                                            5)
+    '    AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
+    '    backtestStrategy.PerTradeMaxProfitPercentage = 1
+    '    backtestStrategy.PerTradeMaxLossPercentage = -1
+    '    backtestStrategy.PerStockMaxProfitPercentage = 1
+    '    backtestStrategy.PerStockMaxLossPercentage = -1
+    '    backtestStrategy.OverAllProfitPerDay = 20000
+    '    backtestStrategy.OverAllLossPerDay = -10000
+    '    backtestStrategy.NumberOfTradeableStockPerDay = 6
+    '    Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
+    'End Function
+    'Private Async Function GapFillStrategyAsync(startDate As Date, endDate As Date) As Task
+    '    For numberOfStock As Integer = 5 To 8
+    '        For useContinuousTrailingSL As Integer = 0 To 1
+    '            Dim backtestStrategy As GapFill = New GapFill(_cts,
+    '                                                    0.05,
+    '                                                    TimeSpan.Parse("15:15:00"),
+    '                                                    TimeSpan.Parse("15:00:00"),
+    '                                                    TimeSpan.Parse("09:15:00"),
+    '                                                    TimeSpan.Parse("15:30:00"),
+    '                                                    0.001,
+    '                                                    0.01,
+    '                                                    useContinuousTrailingSL,
+    '                                                    False)
 
-        AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
-        backtestStrategy.PerTradeMaxProfitPercentage = 1
-        backtestStrategy.PerTradeMaxLossPercentage = -1
-        backtestStrategy.PerStockMaxProfitPercentage = 1
-        backtestStrategy.PerStockMaxLossPercentage = -1
-        backtestStrategy.OverAllProfitPerDay = 20000
-        backtestStrategy.OverAllLossPerDay = -10000
-        backtestStrategy.NumberOfTradeableStockPerDay = 6
-        Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
-    End Function
-    Private Async Function GapFillStrategyAsync(startDate As Date, endDate As Date) As Task
-        For numberOfStock As Integer = 5 To 8
-            For useContinuousTrailingSL As Integer = 0 To 1
-                Dim backtestStrategy As GapFill = New GapFill(_cts,
-                                                        0.05,
-                                                        TimeSpan.Parse("15:15:00"),
-                                                        TimeSpan.Parse("15:00:00"),
-                                                        TimeSpan.Parse("09:15:00"),
-                                                        TimeSpan.Parse("15:30:00"),
-                                                        0.001,
-                                                        0.01,
-                                                        useContinuousTrailingSL,
-                                                        False)
+    '            AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
+    '            backtestStrategy.PerTradeMaxProfitPercentage = 20
+    '            backtestStrategy.PerTradeMaxLossPercentage = -0.5
+    '            backtestStrategy.PerStockMaxProfitPercentage = 20
+    '            backtestStrategy.PerStockMaxLossPercentage = -0.5
+    '            backtestStrategy.NumberOfTradeableStockPerDay = numberOfStock
+    '            Strategy.MarginMultiplier = 30
+    '            backtestStrategy.OverAllCapital = 150000
+    '            Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
+    '        Next
+    '    Next
+    'End Function
+    'Private Async Function GapFillWithoutFillingPCStrategyAsync(startDate As Date, endDate As Date) As Task
+    '    For numberOfStock As Integer = 5 To 8
+    '        For useContinuousTrailingSL As Integer = 0 To 1
+    '            Dim backtestStrategy As GapFillWithoutFillingPC = New GapFillWithoutFillingPC(_cts,
+    '                                                                                        0.05,
+    '                                                                                        TimeSpan.Parse("15:15:00"),
+    '                                                                                        TimeSpan.Parse("15:00:00"),
+    '                                                                                        TimeSpan.Parse("09:15:00"),
+    '                                                                                        TimeSpan.Parse("15:30:00"),
+    '                                                                                        0.001,
+    '                                                                                        0.01,
+    '                                                                                        useContinuousTrailingSL,
+    '                                                                                        False)
 
-                AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
-                backtestStrategy.PerTradeMaxProfitPercentage = 20
-                backtestStrategy.PerTradeMaxLossPercentage = -0.5
-                backtestStrategy.PerStockMaxProfitPercentage = 20
-                backtestStrategy.PerStockMaxLossPercentage = -0.5
-                backtestStrategy.NumberOfTradeableStockPerDay = numberOfStock
-                Strategy.MarginMultiplier = 30
-                backtestStrategy.OverAllCapital = 150000
-                Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
-            Next
-        Next
-    End Function
-    Private Async Function GapFillWithoutFillingPCStrategyAsync(startDate As Date, endDate As Date) As Task
-        For numberOfStock As Integer = 5 To 8
-            For useContinuousTrailingSL As Integer = 0 To 1
-                Dim backtestStrategy As GapFillWithoutFillingPC = New GapFillWithoutFillingPC(_cts,
-                                                                                            0.05,
-                                                                                            TimeSpan.Parse("15:15:00"),
-                                                                                            TimeSpan.Parse("15:00:00"),
-                                                                                            TimeSpan.Parse("09:15:00"),
-                                                                                            TimeSpan.Parse("15:30:00"),
-                                                                                            0.001,
-                                                                                            0.01,
-                                                                                            useContinuousTrailingSL,
-                                                                                            False)
+    '            AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
+    '            backtestStrategy.PerTradeMaxProfitPercentage = 20
+    '            backtestStrategy.PerTradeMaxLossPercentage = -0.5
+    '            backtestStrategy.PerStockMaxProfitPercentage = 20
+    '            backtestStrategy.PerStockMaxLossPercentage = -0.5
+    '            backtestStrategy.NumberOfTradeableStockPerDay = numberOfStock
+    '            Strategy.MarginMultiplier = 30
+    '            backtestStrategy.OverAllCapital = 150000
+    '            Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
+    '        Next
+    '    Next
+    'End Function
+    'Private Async Function GapFillWithoutFillingNeglectGnGStrategyAsync(startDate As Date, endDate As Date) As Task
+    '    For numberOfStock As Integer = 5 To 8
+    '        For useContinuousTrailingSL As Integer = 0 To 1
+    '            Dim backtestStrategy As GapFillWithoutFillingPCNeglectGnG = New GapFillWithoutFillingPCNeglectGnG(_cts,
+    '                                                                                                    0.05,
+    '                                                                                                    TimeSpan.Parse("15:15:00"),
+    '                                                                                                    TimeSpan.Parse("15:00:00"),
+    '                                                                                                    TimeSpan.Parse("09:15:00"),
+    '                                                                                                    TimeSpan.Parse("15:30:00"),
+    '                                                                                                    0.001,
+    '                                                                                                    0.01,
+    '                                                                                                    useContinuousTrailingSL,
+    '                                                                                                    False)
 
-                AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
-                backtestStrategy.PerTradeMaxProfitPercentage = 20
-                backtestStrategy.PerTradeMaxLossPercentage = -0.5
-                backtestStrategy.PerStockMaxProfitPercentage = 20
-                backtestStrategy.PerStockMaxLossPercentage = -0.5
-                backtestStrategy.NumberOfTradeableStockPerDay = numberOfStock
-                Strategy.MarginMultiplier = 30
-                backtestStrategy.OverAllCapital = 150000
-                Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
-            Next
-        Next
-    End Function
-    Private Async Function GapFillWithoutFillingNeglectGnGStrategyAsync(startDate As Date, endDate As Date) As Task
-        For numberOfStock As Integer = 5 To 8
-            For useContinuousTrailingSL As Integer = 0 To 1
-                Dim backtestStrategy As GapFillWithoutFillingPCNeglectGnG = New GapFillWithoutFillingPCNeglectGnG(_cts,
-                                                                                                        0.05,
-                                                                                                        TimeSpan.Parse("15:15:00"),
-                                                                                                        TimeSpan.Parse("15:00:00"),
-                                                                                                        TimeSpan.Parse("09:15:00"),
-                                                                                                        TimeSpan.Parse("15:30:00"),
-                                                                                                        0.001,
-                                                                                                        0.01,
-                                                                                                        useContinuousTrailingSL,
-                                                                                                        False)
+    '            AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
+    '            backtestStrategy.PerTradeMaxProfitPercentage = 20
+    '            backtestStrategy.PerTradeMaxLossPercentage = -0.5
+    '            backtestStrategy.PerStockMaxProfitPercentage = 20
+    '            backtestStrategy.PerStockMaxLossPercentage = -0.5
+    '            backtestStrategy.NumberOfTradeableStockPerDay = numberOfStock
+    '            Strategy.MarginMultiplier = 30
+    '            backtestStrategy.OverAllCapital = 150000
+    '            Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
+    '        Next
+    '    Next
+    'End Function
+    'Private Async Function GapFillWithoutFillingPHLCStrategyAsync(startDate As Date, endDate As Date) As Task
+    '    For numberOfStock As Integer = 5 To 8
+    '        For useContinuousTrailingSL As Integer = 0 To 1
+    '            Dim backtestStrategy As GapFillWithoutFillingPHLC = New GapFillWithoutFillingPHLC(_cts,
+    '                                                                                        0.05,
+    '                                                                                        TimeSpan.Parse("15:15:00"),
+    '                                                                                        TimeSpan.Parse("15:00:00"),
+    '                                                                                        TimeSpan.Parse("09:15:00"),
+    '                                                                                        TimeSpan.Parse("15:30:00"),
+    '                                                                                        0.001,
+    '                                                                                        0.01,
+    '                                                                                        useContinuousTrailingSL,
+    '                                                                                        False)
 
-                AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
-                backtestStrategy.PerTradeMaxProfitPercentage = 20
-                backtestStrategy.PerTradeMaxLossPercentage = -0.5
-                backtestStrategy.PerStockMaxProfitPercentage = 20
-                backtestStrategy.PerStockMaxLossPercentage = -0.5
-                backtestStrategy.NumberOfTradeableStockPerDay = numberOfStock
-                Strategy.MarginMultiplier = 30
-                backtestStrategy.OverAllCapital = 150000
-                Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
-            Next
-        Next
-    End Function
-    Private Async Function GapFillWithoutFillingPHLCStrategyAsync(startDate As Date, endDate As Date) As Task
-        For numberOfStock As Integer = 5 To 8
-            For useContinuousTrailingSL As Integer = 0 To 1
-                Dim backtestStrategy As GapFillWithoutFillingPHLC = New GapFillWithoutFillingPHLC(_cts,
-                                                                                            0.05,
-                                                                                            TimeSpan.Parse("15:15:00"),
-                                                                                            TimeSpan.Parse("15:00:00"),
-                                                                                            TimeSpan.Parse("09:15:00"),
-                                                                                            TimeSpan.Parse("15:30:00"),
-                                                                                            0.001,
-                                                                                            0.01,
-                                                                                            useContinuousTrailingSL,
-                                                                                            False)
+    '            AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
+    '            backtestStrategy.PerTradeMaxProfitPercentage = 20
+    '            backtestStrategy.PerTradeMaxLossPercentage = -0.5
+    '            backtestStrategy.PerStockMaxProfitPercentage = 20
+    '            backtestStrategy.PerStockMaxLossPercentage = -0.5
+    '            backtestStrategy.NumberOfTradeableStockPerDay = numberOfStock
+    '            Strategy.MarginMultiplier = 30
+    '            backtestStrategy.OverAllCapital = 150000
+    '            Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
+    '        Next
+    '    Next
+    'End Function
+    'Private Async Function PairHazingStrategyAsync(startDate As Date, endDate As Date) As Task
+    '    Dim backtestStrategy As SpreadStrategy = New SpreadStrategy(canceller:=_cts,
+    '                                                                  tickSize:=0.05,
+    '                                                                  eodExitTime:=TimeSpan.Parse("15:15:00"),
+    '                                                                  lastTradeEntryTime:=TimeSpan.Parse("14:30:00"),
+    '                                                                  exchangeStartTime:=TimeSpan.Parse("09:15:00"),
+    '                                                                  exchangeEndTime:=TimeSpan.Parse("15:29:00"),
+    '                                                                  signalTimeFrame:=1,
+    '                                                                  UseHeikenAshi:=False,
+    '                                                                  associatedStockData:=Nothing)
 
-                AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
-                backtestStrategy.PerTradeMaxProfitPercentage = 20
-                backtestStrategy.PerTradeMaxLossPercentage = -0.5
-                backtestStrategy.PerStockMaxProfitPercentage = 20
-                backtestStrategy.PerStockMaxLossPercentage = -0.5
-                backtestStrategy.NumberOfTradeableStockPerDay = numberOfStock
-                Strategy.MarginMultiplier = 30
-                backtestStrategy.OverAllCapital = 150000
-                Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
-            Next
-        Next
-    End Function
-    Private Async Function PairHazingStrategyAsync(startDate As Date, endDate As Date) As Task
-        Dim backtestStrategy As SpreadStrategy = New SpreadStrategy(canceller:=_cts,
-                                                                      tickSize:=0.05,
-                                                                      eodExitTime:=TimeSpan.Parse("15:15:00"),
-                                                                      lastTradeEntryTime:=TimeSpan.Parse("14:30:00"),
-                                                                      exchangeStartTime:=TimeSpan.Parse("09:15:00"),
-                                                                      exchangeEndTime:=TimeSpan.Parse("15:29:00"),
-                                                                      signalTimeFrame:=1,
-                                                                      UseHeikenAshi:=False,
-                                                                      associatedStockData:=Nothing)
+    '    AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
+    '    Strategy.MarginMultiplier = 70
+    '    backtestStrategy.NumberOfTradePerDay = Integer.MaxValue
+    '    backtestStrategy.NumberOfTradePerStockPerDay = 2
+    '    backtestStrategy.TrailingSL = False
+    '    backtestStrategy.ReverseSignalTrade = True
+    '    backtestStrategy.ModifyTargetStoploss = False
+    '    backtestStrategy.ExitOnStockFixedTargetStoploss = False
+    '    backtestStrategy.StockMaxProfitPerDay = 4500
+    '    backtestStrategy.StockMaxLossPerDay = -9000
+    '    backtestStrategy.ExitOnOverAllFixedTargetStoploss = False
+    '    backtestStrategy.OverAllProfitPerDay = 3000
+    '    backtestStrategy.OverAllLossPerDay = -10000
+    '    Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
+    'End Function
+    'Private Async Function MarutiStrategyAsync(startDate As Date, endDate As Date) As Task
+    '    Dim backtestStrategy As MarutiStrategy = New MarutiStrategy(canceller:=_cts,
+    '                                                                  tickSize:=0.05,
+    '                                                                  eodExitTime:=TimeSpan.Parse("15:15:00"),
+    '                                                                  lastTradeEntryTime:=TimeSpan.Parse("15:09:00"),
+    '                                                                  exchangeStartTime:=TimeSpan.Parse("9:15:00"),
+    '                                                                  exchangeEndTime:=TimeSpan.Parse("15:29:00"))
 
-        AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
-        Strategy.MarginMultiplier = 70
-        backtestStrategy.NumberOfTradePerDay = Integer.MaxValue
-        backtestStrategy.NumberOfTradePerStockPerDay = 2
-        backtestStrategy.TrailingSL = False
-        backtestStrategy.ReverseSignalTrade = True
-        backtestStrategy.ModifyTargetStoploss = False
-        backtestStrategy.ExitOnStockFixedTargetStoploss = False
-        backtestStrategy.StockMaxProfitPerDay = 4500
-        backtestStrategy.StockMaxLossPerDay = -9000
-        backtestStrategy.ExitOnOverAllFixedTargetStoploss = False
-        backtestStrategy.OverAllProfitPerDay = 3000
-        backtestStrategy.OverAllLossPerDay = -10000
-        Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
-    End Function
-    Private Async Function MarutiStrategyAsync(startDate As Date, endDate As Date) As Task
-        Dim backtestStrategy As MarutiStrategy = New MarutiStrategy(canceller:=_cts,
-                                                                      tickSize:=0.05,
-                                                                      eodExitTime:=TimeSpan.Parse("15:15:00"),
-                                                                      lastTradeEntryTime:=TimeSpan.Parse("15:09:00"),
-                                                                      exchangeStartTime:=TimeSpan.Parse("9:15:00"),
-                                                                      exchangeEndTime:=TimeSpan.Parse("15:29:00"))
-
-        AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
-        Strategy.MarginMultiplier = 13
-        Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
-    End Function
+    '    AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
+    '    Strategy.MarginMultiplier = 13
+    '    Await backtestStrategy.TestStrategyAsync(startDate, endDate).ConfigureAwait(False)
+    'End Function
 #End Region
 
 #Region "Procedure"

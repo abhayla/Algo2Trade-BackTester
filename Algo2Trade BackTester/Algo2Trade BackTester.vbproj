@@ -193,15 +193,6 @@
     <Compile Include="Strategy Rules\VWAPDoubleConfirmationRule.vb" />
     <Compile Include="Strategy Rules\VWAPTouchOneSidedOpenClose.vb" />
     <Compile Include="StrategyForBackTest\GenericStrategy.vb" />
-    <Compile Include="StrategyForBackTest\GapFill.vb" />
-    <Compile Include="StrategyForBackTest\GapFillWithoutFillingPC.vb" />
-    <Compile Include="StrategyForBackTest\GapFillWithoutFillingPHLC.vb" />
-    <Compile Include="StrategyForBackTest\GapFillWithoutFillingPCNeglectGnG.vb" />
-    <Compile Include="StrategyForBackTest\ATRBasedTargetStoploss.vb" />
-    <Compile Include="StrategyForBackTest\InTheTrend.vb" />
-    <Compile Include="StrategyForBackTest\MarutiStrategy.vb" />
-    <Compile Include="StrategyForBackTest\NaughtyBoyVWAP.vb" />
-    <Compile Include="StrategyForBackTest\SpreadStrategy.vb" />
     <Compile Include="uc_BackTest.designer.vb">
       <DependentUpon>uc_BackTest.vb</DependentUpon>
     </Compile>
