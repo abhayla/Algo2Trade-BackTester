@@ -149,6 +149,42 @@ Namespace My
                 Me("DataSourceLive") = value
             End Set
         End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("True")>  _
+        Public Property IncludeSlippage() As Boolean
+            Get
+                Return CType(Me("IncludeSlippage"),Boolean)
+            End Get
+            Set
+                Me("IncludeSlippage") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("True")>  _
+        Public Property BothSideSlippage() As Boolean
+            Get
+                Return CType(Me("BothSideSlippage"),Boolean)
+            End Get
+            Set
+                Me("BothSideSlippage") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("1")>  _
+        Public Property SlippageMultiplier() As Decimal
+            Get
+                Return CType(Me("SlippageMultiplier"),Decimal)
+            End Get
+            Set
+                Me("SlippageMultiplier") = value
+            End Set
+        End Property
     End Class
 End Namespace
 

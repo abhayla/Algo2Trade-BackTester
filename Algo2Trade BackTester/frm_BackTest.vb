@@ -165,11 +165,17 @@ Public Class frm_BackTest
     Private _cts As CancellationTokenSource
     Private _cmn As Common
     Private _dataSource As Strategy.SourceOfData = Strategy.SourceOfData.None
+    Private _includeSlippage As Boolean = False
+    Private _bothSideSlippage As Boolean = False
+    Private _slippageMultiplier As Decimal = 1
     Private Sub frm_BackTest_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         btn_cancel.Visible = False
         cmb_strategy.SelectedIndex = My.Settings.BackTest
         rdbDatabase.Checked = My.Settings.DataSourceDatabase
         rdbLive.Checked = My.Settings.DataSourceLive
+        chkbIncludeSlippage.Checked = My.Settings.IncludeSlippage
+        chkbBothSideSlippage.Checked = My.Settings.BothSideSlippage
+        txtSlippageMultiplier.Text = My.Settings.SlippageMultiplier
     End Sub
     Private Sub OnHeartbeat(msg As String)
         SetLabelText_ThreadSafe(lblProgressStatus, msg)
@@ -178,6 +184,9 @@ Public Class frm_BackTest
         My.Settings.BackTest = cmb_strategy.SelectedIndex
         My.Settings.DataSourceDatabase = rdbDatabase.Checked
         My.Settings.DataSourceLive = rdbLive.Checked
+        My.Settings.IncludeSlippage = chkbIncludeSlippage.Checked
+        My.Settings.BothSideSlippage = chkbBothSideSlippage.Checked
+        My.Settings.SlippageMultiplier = txtSlippageMultiplier.Text
         My.Settings.Save()
         If rdbDatabase.Checked Then
             _dataSource = Strategy.SourceOfData.Database
@@ -256,9 +265,10 @@ Public Class frm_BackTest
 
                                             With backtestStrategy
                                                 .DataSource = _dataSource
+                                                .IncludeSlippage = _includeSlippage
+                                                .BothSideSlippage = _bothSideSlippage
+                                                .SlippageMultiplier = _slippageMultiplier
 
-                                                .IncludeSlippage = True
-                                                .SlippageMultiplier = 1
                                                 .InitialCapital = 500000
                                                 .CapitalForPumpIn = 400000
                                                 .MinimumEarnedCapitalToWithdraw = 600000
@@ -285,7 +295,7 @@ Public Class frm_BackTest
                                                     Case Trade.TypeOfStock.Futures
                                                         Strategy.MarginMultiplier = 30
                                                 End Select
-                                                .NumberOfTradeableStockPerDay = 5
+                                                .NumberOfTradeableStockPerDay = 1
                                                 .NumberOfTradePerDay = Integer.MaxValue
                                                 .NumberOfTradePerStockPerDay = nmbrOfTrade
                                                 .CountTradesWithBreakevenMovement = countBreakevenTrades

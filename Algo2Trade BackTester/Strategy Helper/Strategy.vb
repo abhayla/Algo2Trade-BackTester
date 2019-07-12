@@ -78,6 +78,7 @@ Public MustInherit Class Strategy
 #Region "Property"
     Public Property DataSource As SourceOfData = SourceOfData.Database
     Public Property IncludeSlippage As Boolean = False
+    Public Property BothSideSlippage As Boolean = False
     Public Property SlippageMultiplier As Decimal = 0
     Public Property InitialCapital As Decimal = Decimal.MaxValue
     Public Property CapitalForPumpIn As Decimal = Decimal.MaxValue
@@ -614,8 +615,8 @@ Public MustInherit Class Strategy
                             End If
                         Next
                     End If
-                    Dim targetPoint As Decimal = ConvertFloorCeling(currentTrade.PotentialTarget - currentTrade.EntryPrice, TickSize, RoundOfType.Celing)
-                    If IncludeSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
+                    Dim targetPoint As Decimal = Math.Round(currentTrade.PotentialTarget - currentTrade.EntryPrice, 4)
+                    If IncludeSlippage AndAlso BothSideSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
                         Dim potentialEntryPrice As Decimal = currentPayload.Open + currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryFound As Boolean = False
                         Dim maxForwardPayload As Payload = forwardPayloadsWithLevel.FirstOrDefault.Item1
@@ -642,7 +643,7 @@ Public MustInherit Class Strategy
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    If IncludeSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
+                    If IncludeSlippage AndAlso BothSideSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
@@ -655,8 +656,8 @@ Public MustInherit Class Strategy
                             End If
                         Next
                     End If
-                    Dim targetPoint As Decimal = ConvertFloorCeling(currentTrade.EntryPrice - currentTrade.PotentialTarget, TickSize, RoundOfType.Celing)
-                    If IncludeSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
+                    Dim targetPoint As Decimal = Math.Round(currentTrade.EntryPrice - currentTrade.PotentialTarget, 4)
+                    If IncludeSlippage AndAlso BothSideSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
                         Dim potentialEntryPrice As Decimal = currentPayload.Open - currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryFound As Boolean = False
                         Dim minForwardPayload As Payload = forwardPayloadsWithLevel.FirstOrDefault.Item1
@@ -683,7 +684,7 @@ Public MustInherit Class Strategy
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    If IncludeSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
+                    If IncludeSlippage AndAlso BothSideSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             End If
@@ -701,8 +702,8 @@ Public MustInherit Class Strategy
                             End If
                         Next
                     End If
-                    Dim targetPoint As Decimal = ConvertFloorCeling(currentTrade.PotentialTarget - currentTrade.EntryPrice, TickSize, RoundOfType.Celing)
-                    If IncludeSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
+                    Dim targetPoint As Decimal = Math.Round(currentTrade.PotentialTarget - currentTrade.EntryPrice, 4)
+                    If IncludeSlippage AndAlso BothSideSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
                         Dim potentialEntryPrice As Decimal = currentPayload.Open + currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryFound As Boolean = False
                         Dim maxForwardPayload As Payload = forwardPayloadsWithLevel.FirstOrDefault.Item1
@@ -729,7 +730,7 @@ Public MustInherit Class Strategy
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    If IncludeSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
+                    If IncludeSlippage AndAlso BothSideSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
@@ -742,8 +743,8 @@ Public MustInherit Class Strategy
                             End If
                         Next
                     End If
-                    Dim targetPoint As Decimal = ConvertFloorCeling(currentTrade.EntryPrice - currentTrade.PotentialTarget, TickSize, RoundOfType.Celing)
-                    If IncludeSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
+                    Dim targetPoint As Decimal = Math.Round(currentTrade.EntryPrice - currentTrade.PotentialTarget, 4)
+                    If IncludeSlippage AndAlso BothSideSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
                         Dim potentialEntryPrice As Decimal = currentPayload.Open - currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryFound As Boolean = False
                         Dim minForwardPayload As Payload = forwardPayloadsWithLevel.FirstOrDefault.Item1
@@ -770,7 +771,7 @@ Public MustInherit Class Strategy
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    If IncludeSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
+                    If IncludeSlippage AndAlso BothSideSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             End If
