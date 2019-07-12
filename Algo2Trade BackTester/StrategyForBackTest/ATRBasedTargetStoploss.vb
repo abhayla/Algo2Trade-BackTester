@@ -409,9 +409,7 @@ Public Class ATRBasedTargetStoploss
                                         Dim potentialExitTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Inprogress)
                                         If potentialExitTrades IsNot Nothing AndAlso potentialExitTrades.Count > 0 Then
                                             For Each potentialExitTrade In potentialExitTrades
-                                                If ExitTradeIfPossible(potentialExitTrade, tick) Then
-                                                    Console.WriteLine("")
-                                                End If
+                                                ExitTradeIfPossible(potentialExitTrade, tick, False)
                                             Next
                                         End If
 
@@ -439,8 +437,8 @@ Public Class ATRBasedTargetStoploss
                                         Dim potentialEntryTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Open)
                                         If potentialEntryTrades IsNot Nothing AndAlso potentialEntryTrades.Count > 0 Then
                                             For Each potentialEntryTrade In potentialEntryTrades
-                                                If EnterTradeIfPossible(potentialEntryTrade, tick) Then
-                                                    Console.WriteLine("")
+                                                Dim placeOrderResponse As Tuple(Of Boolean, Date) = EnterTradeIfPossible(potentialEntryTrade, tick, False)
+                                                If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.Item1 Then
                                                     Dim previousCandleTime As Date = GetPreviousXMinuteCandleTime(potentialCandleSignalTime, currentDayXMinuteStocksPayload(stockName), _signalTimeFrame)
                                                     Dim targetPoint As Decimal = ATRXMinuteStocksPayload(stockName)(previousCandleTime) * TargetMultiplier
                                                     Dim slPoint As Decimal = ATRXMinuteStocksPayload(stockName)(previousCandleTime) * StoplossMultiplier

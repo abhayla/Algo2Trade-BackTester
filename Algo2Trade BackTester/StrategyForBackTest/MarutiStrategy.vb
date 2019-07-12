@@ -189,9 +189,7 @@ Public Class MarutiStrategy
                                         Dim potentialExitTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Inprogress)
                                         If potentialExitTrades IsNot Nothing AndAlso potentialExitTrades.Count > 0 Then
                                             For Each potentialExitTrade In potentialExitTrades
-                                                If ExitTradeIfPossible(potentialExitTrade, tick) Then
-                                                    Console.WriteLine("")
-                                                End If
+                                                ExitTradeIfPossible(potentialExitTrade, tick, False)
                                             Next
                                         End If
 
@@ -199,7 +197,8 @@ Public Class MarutiStrategy
                                         Dim potentialEntryTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Open)
                                         If potentialEntryTrades IsNot Nothing AndAlso potentialEntryTrades.Count > 0 Then
                                             For Each potentialEntryTrade In potentialEntryTrades
-                                                If EnterTradeIfPossible(potentialEntryTrade, tick) Then
+                                                Dim placeOrderResponse As Tuple(Of Boolean, Date) = EnterTradeIfPossible(potentialEntryTrade, tick, False)
+                                                If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.Item1 Then
                                                     Console.WriteLine("")
                                                     Dim oppositeCancelTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Open)
                                                     If oppositeCancelTrades IsNot Nothing AndAlso oppositeCancelTrades.Count > 0 Then

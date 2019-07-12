@@ -601,9 +601,7 @@ Public Class SpreadStrategy
                                         Dim potentialExitTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Inprogress)
                                         If potentialExitTrades IsNot Nothing AndAlso potentialExitTrades.Count > 0 Then
                                             For Each potentialExitTrade In potentialExitTrades
-                                                If ExitTradeIfPossible(potentialExitTrade, tick) Then
-                                                    Console.WriteLine("")
-                                                End If
+                                                ExitTradeIfPossible(potentialExitTrade, tick, False)
                                             Next
                                         End If
 
@@ -633,23 +631,21 @@ Public Class SpreadStrategy
                                         Dim potentialEntryTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Open)
                                         If potentialEntryTrades IsNot Nothing AndAlso potentialEntryTrades.Count > 0 Then
                                             For Each potentialEntryTrade In potentialEntryTrades
-                                                If EnterTradeIfPossible(potentialEntryTrade, tick, Nothing, True) Then
-                                                    Console.WriteLine("")
-                                                    'If NumberOfTradesPerDay(currentMinuteCandlePayload.PayloadDate) = 1 Then
-                                                    '    Dim potentialPL As Decimal = Decimal.MinValue
-                                                    '    If potentialEntryTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
-                                                    '        potentialPL = Strategy.CalculatePL(potentialEntryTrade.CoreTradingSymbol, potentialEntryTrade.EntryPrice, potentialEntryTrade.EntryPrice + 0.05, potentialEntryTrade.Quantity, potentialEntryTrade.LotSize, potentialEntryTrade.StockType)
-                                                    '    ElseIf potentialEntryTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
-                                                    '        potentialPL = Strategy.CalculatePL(potentialEntryTrade.CoreTradingSymbol, potentialEntryTrade.EntryPrice - 0.05, potentialEntryTrade.EntryPrice, potentialEntryTrade.Quantity, potentialEntryTrade.LotSize, potentialEntryTrade.StockType)
-                                                    '    End If
-                                                    '    If potentialPL <> Decimal.MinValue AndAlso potentialPL > 0 Then
-                                                    '        Me.StockMaxProfitPerDay = potentialPL
-                                                    '        Me.StockMaxLossPerDay = -1 * potentialPL * 2
-                                                    '        Me.OverAllProfitPerDay = potentialPL
-                                                    '        Me.OverAllLossPerDay = -1 * potentialPL * 2
-                                                    '    End If
-                                                    'End If
-                                                End If
+                                                EnterTradeIfPossible(potentialEntryTrade, tick, False, Nothing, True)
+                                                'If NumberOfTradesPerDay(currentMinuteCandlePayload.PayloadDate) = 1 Then
+                                                '    Dim potentialPL As Decimal = Decimal.MinValue
+                                                '    If potentialEntryTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
+                                                '        potentialPL = Strategy.CalculatePL(potentialEntryTrade.CoreTradingSymbol, potentialEntryTrade.EntryPrice, potentialEntryTrade.EntryPrice + 0.05, potentialEntryTrade.Quantity, potentialEntryTrade.LotSize, potentialEntryTrade.StockType)
+                                                '    ElseIf potentialEntryTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
+                                                '        potentialPL = Strategy.CalculatePL(potentialEntryTrade.CoreTradingSymbol, potentialEntryTrade.EntryPrice - 0.05, potentialEntryTrade.EntryPrice, potentialEntryTrade.Quantity, potentialEntryTrade.LotSize, potentialEntryTrade.StockType)
+                                                '    End If
+                                                '    If potentialPL <> Decimal.MinValue AndAlso potentialPL > 0 Then
+                                                '        Me.StockMaxProfitPerDay = potentialPL
+                                                '        Me.StockMaxLossPerDay = -1 * potentialPL * 2
+                                                '        Me.OverAllProfitPerDay = potentialPL
+                                                '        Me.OverAllLossPerDay = -1 * potentialPL * 2
+                                                '    End If
+                                                'End If
                                             Next
                                         End If
                                     Next

@@ -34,8 +34,8 @@ Partial Class frm_BackTest
         Me.btn_cancel = New System.Windows.Forms.Button()
         Me.uc_BackTest = New Algo2Trade_BackTester.uc_BackTest()
         Me.grpbxDataSource = New System.Windows.Forms.GroupBox()
-        Me.rdbDatabase = New System.Windows.Forms.RadioButton()
         Me.rdbLive = New System.Windows.Forms.RadioButton()
+        Me.rdbDatabase = New System.Windows.Forms.RadioButton()
         Me.grpbxDataSource.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -113,11 +113,10 @@ Partial Class frm_BackTest
         '
         'lblProgressStatus
         '
-        Me.lblProgressStatus.AutoSize = True
         Me.lblProgressStatus.Font = New System.Drawing.Font("Microsoft Sans Serif", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.lblProgressStatus.Location = New System.Drawing.Point(19, 322)
+        Me.lblProgressStatus.Location = New System.Drawing.Point(19, 300)
         Me.lblProgressStatus.Name = "lblProgressStatus"
-        Me.lblProgressStatus.Size = New System.Drawing.Size(187, 18)
+        Me.lblProgressStatus.Size = New System.Drawing.Size(888, 40)
         Me.lblProgressStatus.TabIndex = 19
         Me.lblProgressStatus.Text = "Progress Status ................."
         '
@@ -151,17 +150,6 @@ Partial Class frm_BackTest
         Me.grpbxDataSource.TabStop = False
         Me.grpbxDataSource.Text = "Data Source"
         '
-        'rdbDatabase
-        '
-        Me.rdbDatabase.AutoSize = True
-        Me.rdbDatabase.Location = New System.Drawing.Point(7, 23)
-        Me.rdbDatabase.Name = "rdbDatabase"
-        Me.rdbDatabase.Size = New System.Drawing.Size(90, 21)
-        Me.rdbDatabase.TabIndex = 0
-        Me.rdbDatabase.TabStop = True
-        Me.rdbDatabase.Text = "Database"
-        Me.rdbDatabase.UseVisualStyleBackColor = True
-        '
         'rdbLive
         '
         Me.rdbLive.AutoSize = True
@@ -172,6 +160,17 @@ Partial Class frm_BackTest
         Me.rdbLive.TabStop = True
         Me.rdbLive.Text = "Live"
         Me.rdbLive.UseVisualStyleBackColor = True
+        '
+        'rdbDatabase
+        '
+        Me.rdbDatabase.AutoSize = True
+        Me.rdbDatabase.Location = New System.Drawing.Point(7, 23)
+        Me.rdbDatabase.Name = "rdbDatabase"
+        Me.rdbDatabase.Size = New System.Drawing.Size(90, 21)
+        Me.rdbDatabase.TabIndex = 0
+        Me.rdbDatabase.TabStop = True
+        Me.rdbDatabase.Text = "Database"
+        Me.rdbDatabase.UseVisualStyleBackColor = True
         '
         'frm_BackTest
         '

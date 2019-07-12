@@ -257,6 +257,8 @@ Public Class frm_BackTest
                                             With backtestStrategy
                                                 .DataSource = _dataSource
 
+                                                .IncludeSlipage = True
+                                                .SlipageMultiplier = 1
                                                 .InitialCapital = 500000
                                                 .CapitalForPumpIn = 400000
                                                 .MinimumEarnedCapitalToWithdraw = 600000

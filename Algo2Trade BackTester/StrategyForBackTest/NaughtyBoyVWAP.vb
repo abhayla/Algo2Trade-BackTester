@@ -285,9 +285,7 @@ Public Class NaughtyBoyVWAP
                                         Dim potentialExitTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Inprogress)
                                         If potentialExitTrades IsNot Nothing AndAlso potentialExitTrades.Count > 0 Then
                                             For Each potentialExitTrade In potentialExitTrades
-                                                If ExitTradeIfPossible(potentialExitTrade, tick) Then
-                                                    Console.WriteLine("")
-                                                End If
+                                                ExitTradeIfPossible(potentialExitTrade, tick, False)
                                             Next
                                         End If
 
@@ -342,9 +340,7 @@ Public Class NaughtyBoyVWAP
                                         Dim potentialEntryTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Open)
                                         If potentialEntryTrades IsNot Nothing AndAlso potentialEntryTrades.Count > 0 Then
                                             For Each potentialEntryTrade In potentialEntryTrades
-                                                If EnterTradeIfPossible(potentialEntryTrade, tick) Then
-                                                    Console.WriteLine("")
-                                                End If
+                                                EnterTradeIfPossible(potentialEntryTrade, tick, False)
                                             Next
                                         End If
                                     Next

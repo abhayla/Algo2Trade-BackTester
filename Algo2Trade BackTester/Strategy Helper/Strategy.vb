@@ -78,6 +78,7 @@ Public MustInherit Class Strategy
 #Region "Property"
     Public Property DataSource As SourceOfData = SourceOfData.Database
     Public Property IncludeSlipage As Boolean = False
+    Public Property SlipageMultiplier As Decimal = 0
     Public Property InitialCapital As Decimal = Decimal.MaxValue
     Public Property CapitalForPumpIn As Decimal = Decimal.MaxValue
     Public Property MinimumEarnedCapitalToWithdraw As Decimal = Decimal.MaxValue
@@ -429,18 +430,56 @@ Public MustInherit Class Strategy
         End If
         Return ret
     End Function
-    Public Sub ExitTradeByForce(ByVal currentTrade As Trade, ByVal currentPayload As Payload, ByVal exitRemark As String)
+    Public Sub ExitTradeByForce(ByVal currentTrade As Trade, ByVal currentPayload As Payload, ByVal exitRemark As String, ByVal currentTickIsALevel As Boolean, Optional ByVal forwardPayloads As List(Of Payload) = Nothing)
         If currentTrade Is Nothing Then Throw New ApplicationException("Supplied trade is nothing, cannot exit")
 
         If currentTrade.TradeCurrentStatus = Trade.TradeExecutionStatus.Open Then
             CancelTrade(currentTrade, currentPayload, exitRemark)
         Else
             If currentTrade.TradeCurrentStatus <> Trade.TradeExecutionStatus.Inprogress Then Throw New ApplicationException("Supplied trade is not active, cannot exit")
+            If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 AndAlso exitRemark.ToUpper = "OPPOSITE DIRECTION TRADE TRIGERRED" Then
+                If currentTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
+                    Dim potentialExitPrice As Decimal = currentPayload.Open - currentTrade.StoplossBuffer * SlipageMultiplier
+                    Dim potentialExitFound As Boolean = False
+                    Dim minForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                    For Each runningPayload In forwardPayloads
+                        If runningPayload.Open <= potentialExitPrice Then
+                            currentPayload = runningPayload
+                            potentialExitFound = True
+                            Exit For
+                        End If
+                        If runningPayload.Open <= minForwardPayload.Open Then
+                            minForwardPayload = runningPayload
+                        End If
+                    Next
+                    If Not potentialExitFound Then
+                        currentPayload = minForwardPayload
+                    End If
+                ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
+                    Dim potentialEntryPrice As Decimal = currentPayload.Open + currentTrade.EntryBuffer * SlipageMultiplier
+                    Dim potentialEntryFound As Boolean = False
+                    Dim maxForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                    For Each runningPayload In forwardPayloads
+                        If runningPayload.Open >= potentialEntryPrice Then
+                            currentPayload = runningPayload
+                            potentialEntryFound = True
+                            Exit For
+                        End If
+                        If runningPayload.Open >= maxForwardPayload.Open Then
+                            maxForwardPayload = runningPayload
+                        End If
+                    Next
+                    If Not potentialEntryFound Then
+                        currentPayload = maxForwardPayload
+                    End If
+                End If
+                SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
+            End If
             currentTrade.UpdateTrade(ExitTime:=currentPayload.PayloadDate,
-                                         ExitPrice:=currentPayload.Open,
-                                         ExitCondition:=Trade.TradeExitCondition.ForceExit,
-                                         ExitRemark:=exitRemark,
-                                         TradeCurrentStatus:=Trade.TradeExecutionStatus.Close)
+                                    ExitPrice:=currentPayload.Open,
+                                    ExitCondition:=Trade.TradeExitCondition.ForceExit,
+                                    ExitRemark:=exitRemark,
+                                    TradeCurrentStatus:=Trade.TradeExecutionStatus.Close)
             InsertCapitalRequired(currentTrade.ExitTime, 0, currentTrade.CapitalRequiredWithMargin + currentTrade.PLAfterBrokerage, "Exit Trade By Force")
             'Console.WriteLine(currentTrade.ToString)
         End If
@@ -459,7 +498,7 @@ Public MustInherit Class Strategy
 
             If forceExitTrades IsNot Nothing AndAlso forceExitTrades.Count > 0 Then
                 For Each forceExitTrade In forceExitTrades
-                    ExitTradeByForce(forceExitTrade, currentPayload, exitRemark)
+                    ExitTradeByForce(forceExitTrade, currentPayload, exitRemark, False)
                 Next
             End If
         End If
@@ -558,8 +597,8 @@ Public MustInherit Class Strategy
     '    If ret Then SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
     '    Return ret
     'End Function
-    Public Function EnterTradeIfPossible(ByVal currentTrade As Trade, ByVal currentPayload As Payload, Optional ByVal forwardPayloads As List(Of Payload) = Nothing, Optional ByVal reverseSignalExitOnly As Boolean = False) As Boolean
-        Dim ret As Boolean = False
+    Public Function EnterTradeIfPossible(ByVal currentTrade As Trade, ByVal currentPayload As Payload, ByVal currentTickIsALevel As Boolean, Optional ByVal forwardPayloads As List(Of Payload) = Nothing, Optional ByVal reverseSignalExitOnly As Boolean = False) As Tuple(Of Boolean, Date)
+        Dim ret As Tuple(Of Boolean, Date) = Nothing
         Dim reverseSignalExit As Boolean = False
         If currentTrade Is Nothing OrElse currentTrade.TradeCurrentStatus <> Trade.TradeExecutionStatus.Open Then Throw New ApplicationException("Supplied trade is not open, cannot enter")
         Dim lastTradingTime As Date = New Date(currentTrade.TradingDate.Year, currentTrade.TradingDate.Month, currentTrade.TradingDate.Day, LastTradeEntryTime.Hours, LastTradeEntryTime.Minutes, LastTradeEntryTime.Seconds)
@@ -570,42 +609,82 @@ Public MustInherit Class Strategy
                     If previousRunningTrades IsNot Nothing AndAlso previousRunningTrades.Count > 0 Then
                         For Each previousRunningTrade In previousRunningTrades
                             If previousRunningTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
-                                ExitTradeByForce(previousRunningTrade, currentPayload, "Opposite direction trade trigerred")
+                                ExitTradeByForce(previousRunningTrade, currentPayload, "Opposite direction trade trigerred", currentTickIsALevel, forwardPayloads)
                                 reverseSignalExit = True
                             End If
                         Next
                     End If
+                    Dim targetPoint As Decimal = ConvertFloorCeling(currentTrade.PotentialTarget - currentTrade.EntryPrice, TickSize, RoundOfType.Celing)
+                    If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 Then
+                        Dim potentialEntryPrice As Decimal = currentPayload.Open + currentTrade.EntryBuffer * SlipageMultiplier
+                        Dim potentialEntryFound As Boolean = False
+                        Dim maxForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                        For Each runningPayload In forwardPayloads
+                            If runningPayload.Open >= potentialEntryPrice Then
+                                currentPayload = runningPayload
+                                potentialEntryFound = True
+                                Exit For
+                            End If
+                            If runningPayload.Open >= maxForwardPayload.Open Then
+                                maxForwardPayload = runningPayload
+                            End If
+                        Next
+                        If Not potentialEntryFound Then
+                            currentPayload = maxForwardPayload
+                        End If
+                    End If
                     If reverseSignalExitOnly Then
                         If reverseSignalExit OrElse NumberOfTradesPerStockPerDay(currentPayload.PayloadDate, currentPayload.TradingSymbol) >= 1 Then
-                            ExitTradeByForce(currentTrade, currentPayload, "Opposite direction trade exited")
+                            ExitTradeByForce(currentTrade, currentPayload, "Opposite direction trade exited", currentTickIsALevel)
                         Else
                             currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                         End If
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    ret = True
+                    If IncludeSlipage AndAlso Not currentTickIsALevel Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
+                    ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
                 If currentPayload.Low <= currentTrade.EntryPrice Then
                     If previousRunningTrades IsNot Nothing AndAlso previousRunningTrades.Count > 0 Then
                         For Each previousRunningTrade In previousRunningTrades
                             If previousRunningTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
-                                ExitTradeByForce(previousRunningTrade, currentPayload, "Opposite direction trade trigerred")
+                                ExitTradeByForce(previousRunningTrade, currentPayload, "Opposite direction trade trigerred", currentTickIsALevel, forwardPayloads)
                                 reverseSignalExit = True
                             End If
                         Next
                     End If
+                    Dim targetPoint As Decimal = ConvertFloorCeling(currentTrade.EntryPrice - currentTrade.PotentialTarget, TickSize, RoundOfType.Celing)
+                    If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 Then
+                        Dim potentialEntryPrice As Decimal = currentPayload.Open - currentTrade.EntryBuffer * SlipageMultiplier
+                        Dim potentialEntryFound As Boolean = False
+                        Dim minForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                        For Each runningPayload In forwardPayloads
+                            If runningPayload.Open <= potentialEntryPrice Then
+                                currentPayload = runningPayload
+                                potentialEntryFound = True
+                                Exit For
+                            End If
+                            If runningPayload.Open <= minForwardPayload.Open Then
+                                minForwardPayload = runningPayload
+                            End If
+                        Next
+                        If Not potentialEntryFound Then
+                            currentPayload = minForwardPayload
+                        End If
+                    End If
                     If reverseSignalExitOnly Then
                         If reverseSignalExit OrElse NumberOfTradesPerStockPerDay(currentPayload.PayloadDate, currentPayload.TradingSymbol) >= 1 Then
-                            ExitTradeByForce(currentTrade, currentPayload, "Opposite direction trade exited")
+                            ExitTradeByForce(currentTrade, currentPayload, "Opposite direction trade exited", currentTickIsALevel)
                         Else
                             currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                         End If
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    ret = True
+                    If IncludeSlipage AndAlso Not currentTickIsALevel Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
+                    ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             End If
         Else
@@ -617,48 +696,88 @@ Public MustInherit Class Strategy
                     If previousRunningTrades IsNot Nothing AndAlso previousRunningTrades.Count > 0 Then
                         For Each previousRunningTrade In previousRunningTrades
                             If previousRunningTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
-                                ExitTradeByForce(previousRunningTrade, currentPayload, "Opposite direction trade trigerred")
+                                ExitTradeByForce(previousRunningTrade, currentPayload, "Opposite direction trade trigerred", currentTickIsALevel, forwardPayloads)
                                 reverseSignalExit = True
                             End If
                         Next
                     End If
+                    Dim targetPoint As Decimal = ConvertFloorCeling(currentTrade.PotentialTarget - currentTrade.EntryPrice, TickSize, RoundOfType.Celing)
+                    If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 Then
+                        Dim potentialEntryPrice As Decimal = currentPayload.Open + currentTrade.EntryBuffer * SlipageMultiplier
+                        Dim potentialEntryFound As Boolean = False
+                        Dim maxForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                        For Each runningPayload In forwardPayloads
+                            If runningPayload.Open >= potentialEntryPrice Then
+                                currentPayload = runningPayload
+                                potentialEntryFound = True
+                                Exit For
+                            End If
+                            If runningPayload.Open >= maxForwardPayload.Open Then
+                                maxForwardPayload = runningPayload
+                            End If
+                        Next
+                        If Not potentialEntryFound Then
+                            currentPayload = maxForwardPayload
+                        End If
+                    End If
                     If reverseSignalExitOnly Then
                         If reverseSignalExit OrElse NumberOfTradesPerStockPerDay(currentPayload.PayloadDate, currentPayload.TradingSymbol) >= 1 Then
-                            ExitTradeByForce(currentTrade, currentPayload, "Opposite direction trade exited")
+                            ExitTradeByForce(currentTrade, currentPayload, "Opposite direction trade exited", currentTickIsALevel)
                         Else
                             currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                         End If
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    ret = True
+                    If IncludeSlipage AndAlso Not currentTickIsALevel Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
+                    ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
                 If currentPayload.Low <= currentTrade.EntryPrice Then
                     If previousRunningTrades IsNot Nothing AndAlso previousRunningTrades.Count > 0 Then
                         For Each previousRunningTrade In previousRunningTrades
                             If previousRunningTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
-                                ExitTradeByForce(previousRunningTrade, currentPayload, "Opposite direction trade trigerred")
+                                ExitTradeByForce(previousRunningTrade, currentPayload, "Opposite direction trade trigerred", currentTickIsALevel, forwardPayloads)
                                 reverseSignalExit = True
                             End If
                         Next
                     End If
+                    Dim targetPoint As Decimal = ConvertFloorCeling(currentTrade.EntryPrice - currentTrade.PotentialTarget, TickSize, RoundOfType.Celing)
+                    If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 Then
+                        Dim potentialEntryPrice As Decimal = currentPayload.Open - currentTrade.EntryBuffer * SlipageMultiplier
+                        Dim potentialEntryFound As Boolean = False
+                        Dim minForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                        For Each runningPayload In forwardPayloads
+                            If runningPayload.Open <= potentialEntryPrice Then
+                                currentPayload = runningPayload
+                                potentialEntryFound = True
+                                Exit For
+                            End If
+                            If runningPayload.Open <= minForwardPayload.Open Then
+                                minForwardPayload = runningPayload
+                            End If
+                        Next
+                        If Not potentialEntryFound Then
+                            currentPayload = minForwardPayload
+                        End If
+                    End If
                     If reverseSignalExitOnly Then
                         If reverseSignalExit OrElse NumberOfTradesPerStockPerDay(currentPayload.PayloadDate, currentPayload.TradingSymbol) >= 1 Then
-                            ExitTradeByForce(currentTrade, currentPayload, "Opposite direction trade exited")
+                            ExitTradeByForce(currentTrade, currentPayload, "Opposite direction trade exited", currentTickIsALevel)
                         Else
                             currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                         End If
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    ret = True
+                    If IncludeSlipage AndAlso Not currentTickIsALevel Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
+                    ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             End If
             'end Indibar
         End If
         'If ret Then Console.WriteLine(currentTrade.ToString)
-        If ret Then SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
+        If ret IsNot Nothing AndAlso ret.Item1 Then SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
         Return ret
     End Function
     'End Indibar
@@ -674,57 +793,132 @@ Public MustInherit Class Strategy
         InsertCapitalRequired(currentTrade.ExitTime, 0, currentTrade.CapitalRequiredWithMargin, "Cancel Trade")
         'Console.WriteLine(currentTrade.ToString)
     End Sub
-    Public Function ExitTradeIfPossible(ByVal currentTrade As Trade, ByVal currentPayload As Payload) As Boolean
-        Dim ret As Boolean = False
+    Public Function ExitTradeIfPossible(ByVal currentTrade As Trade, ByVal currentPayload As Payload, ByVal currentTickIsALevel As Boolean, Optional ByVal forwardPayloads As List(Of Payload) = Nothing) As Tuple(Of Boolean, Date)
+        Dim ret As Tuple(Of Boolean, Date) = Nothing
         If currentTrade Is Nothing OrElse currentTrade.TradeCurrentStatus <> Trade.TradeExecutionStatus.Inprogress Then Throw New ApplicationException("Supplied trade is not active, cannot exit")
         If currentTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
             If currentPayload.Low <= currentTrade.PotentialStopLoss Then
+                If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 Then
+                    Dim potentialExitPrice As Decimal = currentTrade.PotentialStopLoss - currentTrade.StoplossBuffer * SlipageMultiplier
+                    Dim potentialExitFound As Boolean = False
+                    Dim minForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                    For Each runningPayload In forwardPayloads
+                        If runningPayload.Open <= potentialExitPrice Then
+                            currentPayload = runningPayload
+                            potentialExitFound = True
+                            Exit For
+                        End If
+                        If runningPayload.Open <= minForwardPayload.Open Then
+                            minForwardPayload = runningPayload
+                        End If
+                    Next
+                    If Not potentialExitFound Then
+                        currentPayload = minForwardPayload
+                    End If
+                End If
+                SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
                 currentTrade.UpdateTrade(ExitTime:=currentPayload.PayloadDate,
                                          ExitPrice:=currentPayload.Open,                'Assuming this is tick and OHLC=tickprice
                                          ExitCondition:=Trade.TradeExitCondition.StopLoss,
                                          ExitRemark:="SL hit under normal condition",
                                          TradeCurrentStatus:=Trade.TradeExecutionStatus.Close)
-                ret = True
+                ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
             ElseIf currentPayload.High >= currentTrade.PotentialTarget Then
+                If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 Then
+                    Dim potentialEntryPrice As Decimal = currentTrade.PotentialTarget + currentTrade.EntryBuffer * SlipageMultiplier
+                    Dim potentialEntryFound As Boolean = False
+                    Dim maxForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                    For Each runningPayload In forwardPayloads
+                        If runningPayload.Open >= potentialEntryPrice Then
+                            currentPayload = runningPayload
+                            potentialEntryFound = True
+                            Exit For
+                        End If
+                        If runningPayload.Open >= maxForwardPayload.Open Then
+                            maxForwardPayload = runningPayload
+                        End If
+                    Next
+                    If Not potentialEntryFound Then
+                        currentPayload = maxForwardPayload
+                    End If
+                End If
+                SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
                 currentTrade.UpdateTrade(ExitTime:=currentPayload.PayloadDate,
                                          ExitPrice:=currentPayload.Open,                'Assuming this is tick and OHLC=tickprice
                                          ExitCondition:=Trade.TradeExitCondition.Target,
                                          ExitRemark:="Target hit under normal condition",
                                          TradeCurrentStatus:=Trade.TradeExecutionStatus.Close)
-                ret = True
+                ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
             End If
         ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
             If currentPayload.High >= currentTrade.PotentialStopLoss Then
+                If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 Then
+                    Dim potentialEntryPrice As Decimal = currentTrade.PotentialStopLoss + currentTrade.EntryBuffer * SlipageMultiplier
+                    Dim potentialEntryFound As Boolean = False
+                    Dim maxForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                    For Each runningPayload In forwardPayloads
+                        If runningPayload.Open >= potentialEntryPrice Then
+                            currentPayload = runningPayload
+                            potentialEntryFound = True
+                            Exit For
+                        End If
+                        If runningPayload.Open >= maxForwardPayload.Open Then
+                            maxForwardPayload = runningPayload
+                        End If
+                    Next
+                    If Not potentialEntryFound Then
+                        currentPayload = maxForwardPayload
+                    End If
+                End If
+                SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
                 currentTrade.UpdateTrade(ExitTime:=currentPayload.PayloadDate,
                                          ExitPrice:=currentPayload.Open,            'Assuming this is tick and OHLC=tickprice
                                          ExitCondition:=Trade.TradeExitCondition.StopLoss,
                                          ExitRemark:="SL hit under normal condition",
                                          TradeCurrentStatus:=Trade.TradeExecutionStatus.Close)
-                ret = True
+                ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
             ElseIf currentPayload.Low <= currentTrade.PotentialTarget Then
+                If IncludeSlipage AndAlso Not currentTickIsALevel AndAlso forwardPayloads IsNot Nothing AndAlso forwardPayloads.Count > 0 Then
+                    Dim potentialExitPrice As Decimal = currentTrade.PotentialTarget - currentTrade.StoplossBuffer * SlipageMultiplier
+                    Dim potentialExitFound As Boolean = False
+                    Dim minForwardPayload As Payload = forwardPayloads.FirstOrDefault
+                    For Each runningPayload In forwardPayloads
+                        If runningPayload.Open <= potentialExitPrice Then
+                            currentPayload = runningPayload
+                            potentialExitFound = True
+                            Exit For
+                        End If
+                        If runningPayload.Open <= minForwardPayload.Open Then
+                            minForwardPayload = runningPayload
+                        End If
+                    Next
+                    If Not potentialExitFound Then
+                        currentPayload = minForwardPayload
+                    End If
+                End If
+                SetCurrentLTPForStock(currentPayload, currentPayload, Trade.TradeType.MIS)
                 currentTrade.UpdateTrade(ExitTime:=currentPayload.PayloadDate,
                                          ExitPrice:=currentPayload.Open,            'Assuming this is tick and OHLC=tickprice
                                          ExitCondition:=Trade.TradeExitCondition.Target,
                                          ExitRemark:="Target hit under normal condition",
                                          TradeCurrentStatus:=Trade.TradeExecutionStatus.Close)
-                ret = True
+                ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
             End If
         End If
 
-        If Not ret And currentPayload.PayloadDate.TimeOfDay.Hours = EODExitTime.Hours And currentPayload.PayloadDate.TimeOfDay.Minutes = EODExitTime.Minutes Then
+        If ret Is Nothing AndAlso currentPayload.PayloadDate.TimeOfDay.Hours = EODExitTime.Hours And currentPayload.PayloadDate.TimeOfDay.Minutes = EODExitTime.Minutes Then
             currentTrade.UpdateTrade(ExitTime:=currentPayload.PayloadDate,
                                          ExitPrice:=currentPayload.Open,            'Assuming this is tick and OHLC=tickprice
                                          ExitCondition:=Trade.TradeExitCondition.EndOfDay,
                                          ExitRemark:="EOD Exit",
                                          TradeCurrentStatus:=Trade.TradeExecutionStatus.Close)
-            ret = True
+            ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
         End If
 
-        If ret Then
+        If ret IsNot Nothing AndAlso ret.Item1 Then
             InsertCapitalRequired(currentTrade.ExitTime, 0, currentTrade.CapitalRequiredWithMargin + currentTrade.PLAfterBrokerage, "Exit Trade If Possible")
             'Console.WriteLine(currentTrade.ToString)
         End If
-
         Return ret
     End Function
     Public Shared Function CalculatePL(ByVal stockName As String, ByVal buyPrice As Double, ByVal sellPrice As Double, ByVal quantity As Integer, ByVal lotSize As Integer, ByVal typeOfStock As Trade.TypeOfStock) As Double
@@ -1234,10 +1428,14 @@ Public MustInherit Class Strategy
         Dim ret As Trade = Nothing
         If TradesTaken IsNot Nothing AndAlso TradesTaken.Count > 0 AndAlso TradesTaken.ContainsKey(currentMinutePayload.PayloadDate.Date) AndAlso TradesTaken(currentMinutePayload.PayloadDate.Date).ContainsKey(currentMinutePayload.TradingSymbol) Then
             Dim completeTrades As List(Of Trade) = GetSpecificTrades(currentMinutePayload, tradeType, Trade.TradeExecutionStatus.Close)
-            If completeTrades IsNot Nothing AndAlso completeTrades.Count > 0 Then
-                ret = completeTrades.OrderBy(Function(x)
-                                                 Return x.ExitTime
-                                             End Function).LastOrDefault
+            Dim inprogressTrades As List(Of Trade) = GetSpecificTrades(currentMinutePayload, tradeType, Trade.TradeExecutionStatus.Inprogress)
+            Dim allTrades As List(Of Trade) = New List(Of Trade)
+            If completeTrades IsNot Nothing AndAlso completeTrades.Count > 0 Then allTrades.AddRange(completeTrades)
+            If inprogressTrades IsNot Nothing AndAlso inprogressTrades.Count > 0 Then allTrades.AddRange(inprogressTrades)
+            If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
+                ret = allTrades.OrderBy(Function(x)
+                                            Return x.EntryTime
+                                        End Function).LastOrDefault
             End If
         End If
         Return ret
@@ -1267,6 +1465,45 @@ Public MustInherit Class Strategy
                         Next
                     End If
                 End If
+            End If
+        End If
+        Return ret
+    End Function
+    Protected Function GetForwardPayloads(ByVal currentDayPayloads As Dictionary(Of Date, Payload), ByVal currentTime As Date) As List(Of Payload)
+        Dim ret As List(Of Payload) = Nothing
+        If currentDayPayloads IsNot Nothing AndAlso currentDayPayloads.Count > 0 Then
+            Dim counter As Integer = 0
+            For Each runningPayload In currentDayPayloads
+                If runningPayload.Key >= Utilities.Time.GetDateTimeTillMinutes(currentTime) Then
+                    If runningPayload.Value.Ticks IsNot Nothing AndAlso runningPayload.Value.Ticks.Count > 0 Then
+                        For Each runningTickPayload In runningPayload.Value.Ticks
+                            If runningTickPayload.PayloadDate > currentTime Then
+                                If ret Is Nothing Then ret = New List(Of Payload)
+                                ret.Add(runningTickPayload)
+                                counter += 1
+                                If counter >= 10 Then Exit For
+                            End If
+                        Next
+                        If counter >= 10 Then Exit For
+                    End If
+                End If
+            Next
+        End If
+        Return ret
+    End Function
+    Protected Function IsCurrentTickALevelOfCurrentMinute(ByVal tickPayload As Payload, ByVal currentMinutePayload As Payload) As Boolean
+        Dim ret As Boolean = False
+        If currentMinutePayload IsNot Nothing Then
+            'ret = (tickPayload.Open = currentMinutePayload.Open) OrElse
+            '      (tickPayload.Open = currentMinutePayload.High) OrElse
+            '      (tickPayload.Open = currentMinutePayload.Low) OrElse
+            '      (tickPayload.Open = currentMinutePayload.Close)
+            If tickPayload.Open = currentMinutePayload.Open AndAlso tickPayload.PayloadDate = currentMinutePayload.Ticks.FirstOrDefault.PayloadDate Then
+                ret = True
+            ElseIf tickPayload.Open = currentMinutePayload.Close AndAlso tickPayload.PayloadDate = currentMinutePayload.Ticks.LastOrDefault.PayloadDate Then
+                ret = True
+            ElseIf tickPayload.Open = currentMinutePayload.High OrElse tickPayload.Open = currentMinutePayload.Low Then
+                ret = True
             End If
         End If
         Return ret
@@ -1332,9 +1569,9 @@ Public MustInherit Class Strategy
                     Next
                     counter += 1
                 End While
-                Return ret
             End Using
         End If
+        Return ret
     End Function
 #End Region
 
