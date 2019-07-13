@@ -166,7 +166,6 @@ Public Class frm_BackTest
     Private _cmn As Common
     Private _dataSource As Strategy.SourceOfData = Strategy.SourceOfData.None
     Private _includeSlippage As Boolean = False
-    Private _bothSideSlippage As Boolean = False
     Private _slippageMultiplier As Decimal = 1
     Private Sub frm_BackTest_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         btn_cancel.Visible = False
@@ -174,7 +173,6 @@ Public Class frm_BackTest
         rdbDatabase.Checked = My.Settings.DataSourceDatabase
         rdbLive.Checked = My.Settings.DataSourceLive
         chkbIncludeSlippage.Checked = My.Settings.IncludeSlippage
-        chkbBothSideSlippage.Checked = My.Settings.BothSideSlippage
         txtSlippageMultiplier.Text = My.Settings.SlippageMultiplier
     End Sub
     Private Sub OnHeartbeat(msg As String)
@@ -185,7 +183,6 @@ Public Class frm_BackTest
         My.Settings.DataSourceDatabase = rdbDatabase.Checked
         My.Settings.DataSourceLive = rdbLive.Checked
         My.Settings.IncludeSlippage = chkbIncludeSlippage.Checked
-        My.Settings.BothSideSlippage = chkbBothSideSlippage.Checked
         My.Settings.SlippageMultiplier = txtSlippageMultiplier.Text
         My.Settings.Save()
         If rdbDatabase.Checked Then
@@ -194,7 +191,6 @@ Public Class frm_BackTest
             _dataSource = Strategy.SourceOfData.Live
         End If
         _includeSlippage = chkbIncludeSlippage.Checked
-        _bothSideSlippage = chkbBothSideSlippage.Checked
         _slippageMultiplier = txtSlippageMultiplier.Text
         _cts = New CancellationTokenSource
         _cmn = New Common(_cts)
@@ -267,9 +263,9 @@ Public Class frm_BackTest
                                             AddHandler backtestStrategy.Heartbeat, AddressOf OnHeartbeat
 
                                             With backtestStrategy
+                                                .BothSideSlippage = True
                                                 .DataSource = _dataSource
                                                 .IncludeSlippage = _includeSlippage
-                                                .BothSideSlippage = _bothSideSlippage
                                                 .SlippageMultiplier = _slippageMultiplier
 
                                                 .InitialCapital = 500000

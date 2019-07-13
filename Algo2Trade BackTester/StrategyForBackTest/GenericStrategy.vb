@@ -369,7 +369,7 @@ Public Class GenericStrategy
                                     'Me.StockMaxProfitPerDay = CalculatePL(stockName, stockList(stockName)(2), stockList(stockName)(2) + (stockList(stockName)(2) * 1 / 100), stockList(stockName)(0), stockList(stockName)(1), tradeStockType)
                                     ''end indibar
                                     If IncludeSlippage AndAlso timeChart IsNot Nothing AndAlso timeChart.Count > 0 AndAlso timeChart.ContainsKey(stockName) Then
-                                        If potentialTickSignalTime > timeChart(stockName) Then
+                                        If potentialTickSignalTime >= timeChart(stockName) Then
                                             timeChart.Remove(stockName)
                                         Else
                                             Continue For
@@ -698,7 +698,7 @@ Public Class GenericStrategy
                                     If currentSecondTickPayload IsNot Nothing AndAlso currentSecondTickPayload.Count > 0 Then
                                         For Each tick In currentSecondTickPayload
                                             If IncludeSlippage AndAlso timeChart IsNot Nothing AndAlso timeChart.Count > 0 AndAlso timeChart.ContainsKey(stockName) Then
-                                                If tick.PayloadDate > timeChart(stockName) Then
+                                                If tick.PayloadDate >= timeChart(stockName) Then
                                                     timeChart.Remove(stockName)
                                                 Else
                                                     Continue For
