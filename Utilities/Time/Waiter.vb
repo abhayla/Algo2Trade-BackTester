@@ -49,7 +49,7 @@ Public Class Waiter
     Public Function WaitOnInternetFailure(ByVal waitDuration As TimeSpan)
         Dim ret As Boolean = False
         OnHeartbeat("Checking internet availability...")
-        While Not HttpBrowser.IsNetworkAvailable(_canceller)
+        While Not HttpBrowser.IsNetworkAvailableAsync(_canceller)
             GC.Collect()
             ret = True
             _canceller.Token.ThrowIfCancellationRequested()

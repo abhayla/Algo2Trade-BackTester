@@ -114,7 +114,7 @@ Public Class GenericStrategy
                 '                                                                         End Function)
                 If Me._StockData IsNot Nothing AndAlso Me._StockData.Count > 0 Then
                     stockList = New Dictionary(Of String, Decimal())
-                    Dim lotSize As Integer = Cmn.GetAppropiateLotSize(_DatabaseTable, _StockData.FirstOrDefault.Key, tradeCheckingDate.Date)
+                    Dim lotSize As Integer = _common.GetAppropiateLotSize(_DatabaseTable, _StockData.FirstOrDefault.Key, tradeCheckingDate.Date)
                     stockList.Add(_StockData.FirstOrDefault.Key, {lotSize, lotSize})
                 Else
                     stockList = GetStockData(tradeCheckingDate)
@@ -179,9 +179,9 @@ Public Class GenericStrategy
                             XDayOneMinutePayload = Data.PastIntradayData(tradeCheckingDate)(stock)
                         Else
                             If Me.DataSource = SourceOfData.Database Then
-                                XDayOneMinutePayload = Cmn.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                                XDayOneMinutePayload = _common.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
                             ElseIf Me.DataSource = SourceOfData.Live Then
-                                XDayOneMinutePayload = Await Cmn.GetHistoricalData(_DatabaseTable, stock, tradeCheckingDate).ConfigureAwait(False)
+                                XDayOneMinutePayload = Await _common.GetHistoricalData(_DatabaseTable, stock, tradeCheckingDate).ConfigureAwait(False)
                             End If
                             'If XDayOneMinutePayload IsNot Nothing Then
                             '    If stockData Is Nothing Then stockData = New Dictionary(Of String, Dictionary(Of Date, Payload))
@@ -189,8 +189,8 @@ Public Class GenericStrategy
                             'End If
                         End If
 
-                            'Now transfer only the current date payload into the workable payload (this will be used for the main loop and checking if the date is a valid date)
-                            If XDayOneMinutePayload IsNot Nothing AndAlso XDayOneMinutePayload.Count > 0 Then
+                        'Now transfer only the current date payload into the workable payload (this will be used for the main loop and checking if the date is a valid date)
+                        If XDayOneMinutePayload IsNot Nothing AndAlso XDayOneMinutePayload.Count > 0 Then
                             OnHeartbeat(String.Format("Processing for {0} on {1}. Stock Counter: [ {2}/{3} ]", stock, tradeCheckingDate.ToShortDateString, stockCount, stockList.Count))
                             For Each runningPayload In XDayOneMinutePayload.Keys
                                 If runningPayload.Date = tradeCheckingDate.Date Then
@@ -201,7 +201,7 @@ Public Class GenericStrategy
                             'Add all these payloads into the stock collections
                             If currentDayOneMinutePayload IsNot Nothing AndAlso currentDayOneMinutePayload.Count > 0 Then
                                 If _SignalTimeFrame > 1 Then
-                                    XDayXMinutePayload = Cmn.ConvertPayloadsToXMinutes(XDayOneMinutePayload, _SignalTimeFrame)
+                                    XDayXMinutePayload = _common.ConvertPayloadsToXMinutes(XDayOneMinutePayload, _SignalTimeFrame)
                                 Else
                                     XDayXMinutePayload = XDayOneMinutePayload
                                 End If
@@ -213,7 +213,7 @@ Public Class GenericStrategy
 
                                 If XDayXMinuteHAPayload IsNot Nothing AndAlso XDayXMinuteHAPayload.Count > 0 Then
                                     'TODO: Change
-                                    Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
+                                    Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
                                         strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
                                         strategyBaseRule.QuantityFlag = Me.QuantityFlag
                                         strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
@@ -1054,7 +1054,7 @@ Public Class GenericStrategy
         Dim ret As Dictionary(Of String, Decimal()) = Nothing
         If StockFileName IsNot Nothing Then
             Dim dt As DataTable = Nothing
-            Using csvHelper As New Utilities.DAL.CSVHelper(StockFileName, ",", Me.Canceller)
+            Using csvHelper As New Utilities.DAL.CSVHelper(StockFileName, ",", _canceller)
                 dt = csvHelper.GetDataTableFromCSV(1)
             End Using
             If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
@@ -1112,8 +1112,8 @@ Public Class GenericStrategy
                 CandleBasedEntry = Nothing
                 If _StockData IsNot Nothing Then _StockData.Clear()
 
-                Canceller = Nothing
-                Cmn = Nothing
+                _canceller = Nothing
+                _common = Nothing
                 If TradesTaken IsNot Nothing Then TradesTaken.Clear()
                 TradesTaken = Nothing
                 TickSize = Nothing

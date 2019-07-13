@@ -39,6 +39,8 @@ Namespace Calculator
                                                                                      HttpMethod.Get,
                                                                                      Nothing,
                                                                                      True,
+                                                                                     Nothing,
+                                                                                     False,
                                                                                      Nothing).ConfigureAwait(False)
                 If l Is Nothing OrElse l.Item2 Is Nothing Then
                     Throw New ApplicationException(String.Format("No response in the additional site's historical race results landing page: {0}", "https://zerodha.com/static/app.js"))

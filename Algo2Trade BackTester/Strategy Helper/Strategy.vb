@@ -6,6 +6,18 @@ Imports System.IO
 
 Public MustInherit Class Strategy
 
+#Region "Protected Variables"
+    Protected _canceller As CancellationTokenSource
+    Protected _common As Common = Nothing
+    Protected TradesTaken As Dictionary(Of Date, Dictionary(Of String, List(Of Trade)))
+    Protected Shared TickSize As Double = DEFAULT_TICK_SIZE
+    Protected EODExitTime As TimeSpan = TimeSpan.Parse(EOD_EXIT_TIME)
+    Protected LastTradeEntryTime As TimeSpan = TimeSpan.Parse(LAST_TRADE_ENTRY_TIME)
+    Protected ExchangeStartTime As TimeSpan = TimeSpan.Parse(EXCHANGE_START_TIME)
+    Protected ExchangeEndTime As TimeSpan = TimeSpan.Parse(EXCHANGE_END_TIME)
+    Public Shared MarginMultiplier As Integer = MARGIN_MULTIPLIER
+#End Region
+
 #Region "Constructor"
     Public Sub New(ByVal canceller As CancellationTokenSource,
                    ByVal tickSize As Double,
@@ -13,16 +25,17 @@ Public MustInherit Class Strategy
                    ByVal lastTradeEntryTime As TimeSpan,
                    ByVal exchangeStartTime As TimeSpan,
                    ByVal exchangeEndTime As TimeSpan)
-        Me.Canceller = canceller
+        _canceller = canceller
         Strategy.TickSize = tickSize
         Me.EODExitTime = eodExitTime
         Me.LastTradeEntryTime = lastTradeEntryTime
         Me.ExchangeStartTime = exchangeStartTime
         Me.ExchangeEndTime = exchangeEndTime
-        AddHandler Cmn.Heartbeat, AddressOf OnHeartbeat
-        AddHandler Cmn.WaitingFor, AddressOf OnWaitingFor
-        AddHandler Cmn.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-        AddHandler Cmn.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+        _common = New Common(_canceller)
+        AddHandler _common.Heartbeat, AddressOf OnHeartbeat
+        AddHandler _common.WaitingFor, AddressOf OnWaitingFor
+        AddHandler _common.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+        AddHandler _common.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
     End Sub
 #End Region
 
@@ -61,18 +74,6 @@ Public MustInherit Class Strategy
         Database
         None
     End Enum
-#End Region
-
-#Region "Protected Variables"
-    Protected Canceller As CancellationTokenSource
-    Protected Cmn As Common = New Common(Canceller)
-    Protected TradesTaken As Dictionary(Of Date, Dictionary(Of String, List(Of Trade)))
-    Protected Shared TickSize As Double = DEFAULT_TICK_SIZE
-    Protected EODExitTime As TimeSpan = TimeSpan.Parse(EOD_EXIT_TIME)
-    Protected LastTradeEntryTime As TimeSpan = TimeSpan.Parse(LAST_TRADE_ENTRY_TIME)
-    Protected ExchangeStartTime As TimeSpan = TimeSpan.Parse(EXCHANGE_START_TIME)
-    Protected ExchangeEndTime As TimeSpan = TimeSpan.Parse(EXCHANGE_END_TIME)
-    Public Shared MarginMultiplier As Integer = MARGIN_MULTIPLIER
 #End Region
 
 #Region "Property"
@@ -616,6 +617,7 @@ Public MustInherit Class Strategy
                         Next
                     End If
                     Dim targetPoint As Decimal = Math.Round(currentTrade.PotentialTarget - currentTrade.EntryPrice, 4)
+                    Dim slippage As Decimal = 0
                     If IncludeSlippage AndAlso BothSideSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
                         Dim potentialEntryPrice As Decimal = currentPayload.Open + currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryFound As Boolean = False
@@ -633,6 +635,7 @@ Public MustInherit Class Strategy
                         If Not potentialEntryFound Then
                             currentPayload = maxForwardPayload
                         End If
+                        slippage = Math.Round(currentPayload.Open - currentTrade.EntryPrice, 2)
                     End If
                     If reverseSignalExitOnly Then
                         If reverseSignalExit OrElse NumberOfTradesPerStockPerDay(currentPayload.PayloadDate, currentPayload.TradingSymbol) >= 1 Then
@@ -643,7 +646,9 @@ Public MustInherit Class Strategy
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    If IncludeSlippage AndAlso BothSideSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
+                    If IncludeSlippage AndAlso BothSideSlippage Then
+                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint + slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss + slippage)
+                    End If
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
@@ -657,7 +662,9 @@ Public MustInherit Class Strategy
                         Next
                     End If
                     Dim targetPoint As Decimal = Math.Round(currentTrade.EntryPrice - currentTrade.PotentialTarget, 4)
+                    Dim slippage As Decimal = 0
                     If IncludeSlippage AndAlso BothSideSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
+                        targetPoint -= currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryPrice As Decimal = currentPayload.Open - currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryFound As Boolean = False
                         Dim minForwardPayload As Payload = forwardPayloadsWithLevel.FirstOrDefault.Item1
@@ -674,6 +681,7 @@ Public MustInherit Class Strategy
                         If Not potentialEntryFound Then
                             currentPayload = minForwardPayload
                         End If
+                        slippage = Math.Round(currentTrade.EntryPrice - currentPayload.Open, 2)
                     End If
                     If reverseSignalExitOnly Then
                         If reverseSignalExit OrElse NumberOfTradesPerStockPerDay(currentPayload.PayloadDate, currentPayload.TradingSymbol) >= 1 Then
@@ -684,7 +692,9 @@ Public MustInherit Class Strategy
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    If IncludeSlippage AndAlso BothSideSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
+                    If IncludeSlippage AndAlso BothSideSlippage Then
+                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint - slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss - slippage)
+                    End If
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             End If
@@ -703,7 +713,9 @@ Public MustInherit Class Strategy
                         Next
                     End If
                     Dim targetPoint As Decimal = Math.Round(currentTrade.PotentialTarget - currentTrade.EntryPrice, 4)
+                    Dim slippage As Decimal = 0
                     If IncludeSlippage AndAlso BothSideSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
+                        targetPoint += currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryPrice As Decimal = currentPayload.Open + currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryFound As Boolean = False
                         Dim maxForwardPayload As Payload = forwardPayloadsWithLevel.FirstOrDefault.Item1
@@ -720,6 +732,7 @@ Public MustInherit Class Strategy
                         If Not potentialEntryFound Then
                             currentPayload = maxForwardPayload
                         End If
+                        slippage = Math.Round(currentPayload.Open - currentTrade.EntryPrice, 2)
                     End If
                     If reverseSignalExitOnly Then
                         If reverseSignalExit OrElse NumberOfTradesPerStockPerDay(currentPayload.PayloadDate, currentPayload.TradingSymbol) >= 1 Then
@@ -730,7 +743,9 @@ Public MustInherit Class Strategy
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    If IncludeSlippage AndAlso BothSideSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
+                    If IncludeSlippage AndAlso BothSideSlippage Then
+                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint + slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss + slippage)
+                    End If
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             ElseIf currentTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
@@ -744,7 +759,9 @@ Public MustInherit Class Strategy
                         Next
                     End If
                     Dim targetPoint As Decimal = Math.Round(currentTrade.EntryPrice - currentTrade.PotentialTarget, 4)
+                    Dim slippage As Decimal = 0
                     If IncludeSlippage AndAlso BothSideSlippage AndAlso forwardPayloadsWithLevel IsNot Nothing AndAlso forwardPayloadsWithLevel.Count > 0 Then
+                        targetPoint -= currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryPrice As Decimal = currentPayload.Open - currentTrade.EntryBuffer * SlippageMultiplier
                         Dim potentialEntryFound As Boolean = False
                         Dim minForwardPayload As Payload = forwardPayloadsWithLevel.FirstOrDefault.Item1
@@ -761,6 +778,7 @@ Public MustInherit Class Strategy
                         If Not potentialEntryFound Then
                             currentPayload = minForwardPayload
                         End If
+                        slippage = Math.Round(currentTrade.EntryPrice - currentPayload.Open, 2)
                     End If
                     If reverseSignalExitOnly Then
                         If reverseSignalExit OrElse NumberOfTradesPerStockPerDay(currentPayload.PayloadDate, currentPayload.TradingSymbol) >= 1 Then
@@ -771,7 +789,9 @@ Public MustInherit Class Strategy
                     Else
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
-                    If IncludeSlippage AndAlso BothSideSlippage Then currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
+                    If IncludeSlippage AndAlso BothSideSlippage Then
+                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint - slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss - slippage)
+                    End If
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
             End If

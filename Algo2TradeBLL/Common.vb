@@ -1,9 +1,7 @@
-﻿Imports System.IO
-Imports System.Net
+﻿Imports System.Net.Http
 Imports System.Threading
 Imports MySql.Data.MySqlClient
-Imports Utilities.DAL
-Imports Utilities.Strings
+Imports Utilities.Network
 
 Public Class Common
     Implements IDisposable
@@ -649,9 +647,34 @@ Public Class Common
             Dim historicalDataURL As String = String.Format(ZerodhaHistoricalURL, instrumentToken, currentDate.AddDays(-7).ToString("yyyy-MM-dd"), currentDate.ToString("yyyy-MM-dd"))
             OnHeartbeat(String.Format("Fetching historical Data: {0}", historicalDataURL))
             Dim historicalCandlesJSONDict As Dictionary(Of String, Object) = Nothing
-            Using sr As New StreamReader(HttpWebRequest.Create(historicalDataURL).GetResponseAsync().Result.GetResponseStream)
-                Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
-                historicalCandlesJSONDict = StringManipulation.JsonDeserialize(jsonString)
+            'Using sr As New StreamReader(HttpWebRequest.Create(historicalDataURL).GetResponseAsync().Result.GetResponseStream)
+            '    Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
+            '    historicalCandlesJSONDict = StringManipulation.JsonDeserialize(jsonString)
+            'End Using
+            Dim proxyToBeUsed As HttpProxy = Nothing
+            Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _canceller)
+                AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                AddHandler browser.Heartbeat, AddressOf OnHeartbeat
+                AddHandler browser.WaitingFor, AddressOf OnWaitingFor
+                AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                'Get to the landing page first
+                Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL,
+                                                                                    HttpMethod.Get,
+                                                                                    Nothing,
+                                                                                    True,
+                                                                                    Nothing,
+                                                                                    True,
+                                                                                    "application/json").ConfigureAwait(False)
+                If l Is Nothing OrElse l.Item2 Is Nothing Then
+                    Throw New ApplicationException(String.Format("No response while getting historical data for: {0}", historicalDataURL))
+                End If
+                If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
+                    historicalCandlesJSONDict = l.Item2
+                End If
+                RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
             End Using
             If historicalCandlesJSONDict IsNot Nothing AndAlso historicalCandlesJSONDict.Count > 0 AndAlso
                 historicalCandlesJSONDict.ContainsKey("data") Then

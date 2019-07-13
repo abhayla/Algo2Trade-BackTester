@@ -71,7 +71,7 @@ Namespace Network
                 _proxyToBeUsed = Nothing
             End If
             Me._ConnectTimeOut = connectTimeOut
-            Me._httpInstance = New HttpClient(_httpHandler)
+            Me._httpInstance = New HttpClient(_httpHandler, False)
             Me._httpInstance.Timeout = Me.ConnectTimeOut
             HtmlNode.ElementsFlags.Remove("form")
         End Sub
@@ -82,7 +82,8 @@ Namespace Network
         Private _httpHandler As HttpClientHandler
         Private _proxyToBeUsed As HttpProxy
 
-        Private Shared _internetConnectionCheckerURL As String = "www.rediff.com"
+        'Private Shared _internetConnectionCheckerURL As String = "www.rediff.com"
+        Private Shared _internetConnectionCheckerURL As String = "www.wikipedia.org"
         Protected _canceller As CancellationTokenSource
 #End Region
 
@@ -117,9 +118,14 @@ Namespace Network
 #End Region
 
 #Region "Private Methods"
-        Private Async Function GenerateResponseOutputAsync(ByVal response As HttpResponseMessage) As Task(Of Object)
+        Private Async Function GenerateResponseOutputAsync(ByVal response As HttpResponseMessage, ByVal responseType As String) As Task(Of Object)
+            logger.Debug("Generating response output")
             If response IsNot Nothing AndAlso response.Content IsNot Nothing Then
+                If responseType IsNot Nothing AndAlso Not response.Content.Headers.ContentType.MediaType = responseType Then
+                    Throw New ApplicationException("Error in expected response type, probably a server block message instead of json")
+                End If
                 If response.Content.Headers.ContentType.MediaType = "text/html" Then
+                    logger.Debug("Inside text/html output conversion")
                     Dim retDoc As HtmlDocument = Nothing
                     Using ms As New System.IO.MemoryStream(Await response.Content.ReadAsByteArrayAsync.ConfigureAwait(False))
                         retDoc = New HtmlDocument
@@ -128,13 +134,17 @@ Namespace Network
                     End Using
                     Return retDoc
                 ElseIf response.Content.Headers.ContentType.MediaType = "application/json" Then
+                    logger.Debug("Inside application/json output conversion")
                     Dim jsonString As String = Await response.Content.ReadAsStringAsync().ConfigureAwait(False)
                     Dim retDictionary As Dictionary(Of String, Object) = JsonDeserialize(jsonString)
                     Return retDictionary
-                ElseIf response.Content.Headers.ContentType.MediaType = "application/javascript" Then
-                    Return Await response.Content.ReadAsStringAsync().ConfigureAwait(False)
                 ElseIf response.Content.Headers.ContentType.MediaType = "text/csv" Then
+                    logger.Debug("Inside text/csv output conversion")
                     Throw New NotImplementedException
+                ElseIf response.Content.Headers.ContentType.MediaType = "application/javascript" Then
+                    logger.Debug("Inside application/javascript output conversion")
+                    Dim jsString As String = Await response.Content.ReadAsStringAsync().ConfigureAwait(False)
+                    Return jsString
                 Else
                     Throw New NotImplementedException
                 End If
@@ -144,23 +154,7 @@ Namespace Network
         End Function
 
         Public Sub AddHeaders(ByVal request As HttpRequestMessage, ByVal referalURL As String, ByVal useRandomUserAgent As Boolean, ByVal headers As Dictionary(Of String, String))
-            'request.Headers.TryAddWithoutValidation("Host", "kite.zerodha.com")
-            'request.Headers.TryAddWithoutValidation("Origin", "https://kite.zerodha.com")
-            'request.Headers.TryAddWithoutValidation("User-Agent", UserAgent)
-            'request.Headers.TryAddWithoutValidation("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8")
-            'Dim connectionString As String = Nothing
-            'If KeepAlive Then
-            '    connectionString = "Keep-Alive"
-            'Else
-            '    connectionString = "Close"
-            'End If
-            'request.Headers.TryAddWithoutValidation("Connection", "Keep-Alive") '
-            'request.Headers.TryAddWithoutValidation("Accept-Encoding", AcceptEncoding)
-            'request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.8") '
-            'request.Headers.TryAddWithoutValidation("Content-Type", FormPostContentType)
-            'If referalURL IsNot Nothing Then request.Headers.TryAddWithoutValidation("Referer", referalURL)
-
-            'headers = Nothing
+            logger.Debug("Adding headers")
             If headers IsNot Nothing Then
                 For Each item In headers
                     request.Headers.TryAddWithoutValidation(item.Key, item.Value)
@@ -211,13 +205,16 @@ Namespace Network
 
 #Region "Public Methods"
         Public Shared Sub KillCookies()
+            logger.Debug("Killing cookies")
             _AllCookies = Nothing
         End Sub
 
-        Public Shared Function IsNetworkAvailable(ByVal cts As CancellationTokenSource) As Boolean
+        Public Shared Function IsNetworkAvailableAsync(ByVal cts As CancellationTokenSource) As Boolean
+            logger.Debug("Checking if network available")
             Dim ret As Boolean = False
             Using ping = New System.Net.NetworkInformation.Ping()
                 Try
+                    logger.Debug("Checking ping (URL:{0})", _internetConnectionCheckerURL)
                     Dim result = ping.Send(_internetConnectionCheckerURL)
                     If (result.Status <> System.Net.NetworkInformation.IPStatus.Success) Then
                         ret = False
@@ -225,7 +222,11 @@ Namespace Network
                         ret = True
                     End If
                 Catch ex As Exception
+                    logger.Debug("Supressed exception")
+                    logger.Error(ex)
                     ret = False
+                Finally
+                    ping.Dispose()
                 End Try
             End Using
             Return ret
@@ -234,6 +235,7 @@ Namespace Network
                                            ByVal filePath As String,
                                            ByVal useRandomUserAgent As Boolean,
                                            ByVal headers As Dictionary(Of String, String)) As Task(Of Boolean)
+            logger.Debug("Getting file asynchronously")
             Dim ret As Boolean = Nothing
             Dim lastException As Exception = Nothing
             Dim request As HttpRequestMessage = Nothing
@@ -253,14 +255,17 @@ Namespace Network
                                                         .RequestUri = New Uri(downloadURL),
                                                         .Method = HttpMethod.Get
                                                     }
+                    OnHeartbeat(String.Format("Downloading file over GET (URL:{0})", downloadURL))
                     Try
                         AddHeaders(request, Nothing, useRandomUserAgent, headers)
                         _canceller.Token.ThrowIfCancellationRequested()
 
                         Dim responseMessage As HttpResponseMessage = Await _httpInstance.SendAsync(request,
                                                                                                _canceller.Token).ConfigureAwait(False)
+                        logger.Debug("Processing response")
                         Using contentStream As Stream = Await (responseMessage).Content.ReadAsStreamAsync.ConfigureAwait(False)
                             _canceller.Token.ThrowIfCancellationRequested()
+                            logger.Debug("Creating local file from the download (File:{0})", filePath)
                             Using localStream As FileStream = File.Create(filePath)
                                 _canceller.Token.ThrowIfCancellationRequested()
                                 contentStream.CopyTo(localStream)
@@ -292,7 +297,7 @@ Namespace Network
                                 waiter.SleepRequiredDuration(WaitDurationOnAnyFailure.TotalSeconds, "Non-explicit cancellation")
                                 _canceller.Token.ThrowIfCancellationRequested()
                             Else
-                                logger.Debug("HTTP->Task cancelled due to internet problem:{0}",
+                                logger.Debug("HTTP->Task cancelled due to internet problem:{0}, waited prescribed seconds, will now retry",
                                              opx.Message)
                                 'Since internet was down, no need to consume retries
                                 retryCtr -= 1
@@ -321,19 +326,19 @@ Namespace Network
                                 _canceller.Token.ThrowIfCancellationRequested()
                             End If
                         Else
-                            logger.Debug("HTTP->Exception with internet problem:{0}",
+                            logger.Debug("HTTP->Exception with internet problem:{0}, waited prescribed seconds, will now retry",
                                      ex.Message)
                             'Since internet was down, no need to consume retries
                             retryCtr -= 1
                         End If
                     Finally
                         OnDocumentDownloadComplete()
-                        Console.WriteLine(downloadURL)
-                        For Each cookie As Cookie In _AllCookies.GetCookies(New Uri("http://kite.zerodha.com"))
-                            Console.WriteLine("Name = {0} ; Value = {1} ; Domain = {2}", cookie.Name, cookie.Value,
-                                      cookie.Domain)
+                        'Console.WriteLine(downloadURL)
+                        'For Each cookie As Cookie In _AllCookies.GetCookies(New Uri("http://kite.zerodha.com"))
+                        '    Console.WriteLine("Name = {0} ; Value = {1} ; Domain = {2}", cookie.Name, cookie.Value,
+                        '              cookie.Domain)
 
-                        Next
+                        'Next
                     End Try
                     _canceller.Token.ThrowIfCancellationRequested()
                     GC.Collect()
@@ -353,7 +358,12 @@ Namespace Network
                                                   ByVal method As HttpMethod,
                                                   ByVal referalURL As String,
                                                   ByVal useRandomUserAgent As Boolean,
-                                                  ByVal headers As Dictionary(Of String, String)) As Task(Of Tuple(Of Uri, Object))
+                                                  ByVal headers As Dictionary(Of String, String),
+                                                  ByVal checkSuccessCode As Boolean,
+                                                  ByVal responseType As String) As Task(Of Tuple(Of Uri, Object))
+            'If URLToBrowse.ToUpper.Contains("kitecharts".ToUpper) Then Exit Function
+
+            logger.Debug("Placing non POST request asynchronously")
             Dim retTuple As Tuple(Of Uri, Object) = Nothing
 
             Dim lastException As Exception = Nothing
@@ -377,39 +387,22 @@ Namespace Network
                                                         .RequestUri = New Uri(URLToBrowse),
                                                         .Method = method
                                                     }
+
+                    OnHeartbeat(String.Format("Opening URL using non-POST request (URL:{0})", URLToBrowse))
                     Try
                         AddHeaders(request, referalURL, useRandomUserAgent, headers)
-                        'request.Headers.TryAddWithoutValidation("User-Agent", UserAgent)
-                        'request.Headers.TryAddWithoutValidation("Accept", "*/*")
-                        'Dim connectionString As String = Nothing
-                        'If KeepAlive Then
-                        '    connectionString = "Keep-Alive"
-                        'Else
-                        '    connectionString = "Close"
-                        'End If
-                        'request.Headers.TryAddWithoutValidation("Connection", "Keep-Alive")
-                        'request.Headers.TryAddWithoutValidation("Accept-Encoding", AcceptEncoding)
-                        'request.Headers.TryAddWithoutValidation("Accept-Language", "en-US")
-                        'request.Headers.TryAddWithoutValidation("Content-Type", FormPostContentType)
-                        'If referalURL IsNot Nothing Then request.Headers.TryAddWithoutValidation("Referer", referalURL)
-
-                        'Console.WriteLine(URLToBrowse)
-                        'If _AllCookies IsNot Nothing Then
-                        '    For Each cookie As Cookie In _AllCookies.GetCookies(New Uri("http://kite.zerodha.com"))
-                        '        Console.WriteLine("Name = {0} ; Value = {1} ; Domain = {2}", cookie.Name, cookie.Value,
-                        '              cookie.Domain)
-
-                        '    Next
-                        'End If
 
                         _canceller.Token.ThrowIfCancellationRequested()
                         response = Await _httpInstance.SendAsync(request, _canceller.Token).ConfigureAwait(False)
-                        response.EnsureSuccessStatusCode()
+
+                        If checkSuccessCode Then response.EnsureSuccessStatusCode()
                         _canceller.Token.ThrowIfCancellationRequested()
 
-                        Dim tempRet = Await GenerateResponseOutputAsync(response).ConfigureAwait(False)
+                        logger.Debug("Processing response")
+                        Dim tempRet = Await GenerateResponseOutputAsync(response, responseType).ConfigureAwait(False)
+
                         If tempRet IsNot Nothing Then
-                            'Console.WriteLine("Successfully done:" & request.RequestUri.ToString)
+                            logger.Debug("Processing object to be returned (Response URL:{0})", response.RequestMessage.RequestUri)
                             lastException = Nothing
                             allOKWithoutException = True
                             retTuple = New Tuple(Of Uri, Object)(response.RequestMessage.RequestUri, tempRet)
@@ -419,6 +412,7 @@ Namespace Network
                         End If
                         _canceller.Token.ThrowIfCancellationRequested()
                     Catch opx As OperationCanceledException
+                        'Exit Function
                         logger.Error(opx)
                         lastException = opx
                         If URLToBrowse = _internetConnectionCheckerURL Then
@@ -434,7 +428,7 @@ Namespace Network
                                 Waiter.SleepRequiredDuration(WaitDurationOnAnyFailure.TotalSeconds, "Non-explicit cancellation")
                                 _canceller.Token.ThrowIfCancellationRequested()
                             Else
-                                logger.Debug("HTTP->Task was cancelled due to internet problem:{0}",
+                                logger.Debug("HTTP->Task was cancelled due to internet problem:{0}, waited prescribed seconds, will now retry",
                                              opx.Message)
                                 'Since internet was down, no need to consume retries
                                 retryCtr -= 1
@@ -491,7 +485,7 @@ Namespace Network
                                 End If
                             End If
                         Else
-                            logger.Debug("HTTP->HttpRequestException with internet problem:{0}",
+                            logger.Debug("HTTP->HttpRequestException with internet problem:{0}, waited prescribed seconds, will now retry",
                                          hex.Message)
                             'Since internet was down, no need to consume retries
                             retryCtr -= 1
@@ -527,7 +521,7 @@ Namespace Network
                                 _canceller.Token.ThrowIfCancellationRequested()
                             End If
                         Else
-                            logger.Debug("HTTP->Exception with internet problem:{0}",
+                            logger.Debug("HTTP->Exception with internet problem:{0}, waited prescribed seconds, will now retry",
                                          ex.Message)
                             'Since internet was down, no need to consume retries
                             retryCtr -= 1
@@ -535,7 +529,7 @@ Namespace Network
                     Finally
                         OnDocumentDownloadComplete()
                         If response IsNot Nothing Then response.Dispose()
-                        Console.WriteLine(URLToBrowse)
+                        'Console.WriteLine(URLToBrowse)
                         'If _AllCookies IsNot Nothing Then
                         '    For Each cookie As Cookie In _AllCookies.GetCookies(New Uri("http://kite.zerodha.com"))
                         '        Console.WriteLine("Name = {0} ; Value = {1} ; Domain = {2}", cookie.Name, cookie.Value,
@@ -543,12 +537,13 @@ Namespace Network
 
                         '    Next
                         'End If
+                        GC.AddMemoryPressure(1024 * 1024)
+                        GC.Collect()
                     End Try
                     _canceller.Token.ThrowIfCancellationRequested()
                     If retTuple IsNot Nothing Then
                         Exit For
                     End If
-                    GC.Collect()
                 Next
                 RemoveHandler Waiter.Heartbeat, AddressOf OnHeartbeat
                 RemoveHandler Waiter.WaitingFor, AddressOf OnWaitingFor
@@ -562,8 +557,9 @@ Namespace Network
                                                ByVal referalURL As String,
                                                ByVal usablePostContent As HttpContent,
                                                ByVal useRandomUserAgent As Boolean,
-                                               ByVal headers As Dictionary(Of String, String)) As Task(Of Tuple(Of Uri, Object))
-
+                                               ByVal headers As Dictionary(Of String, String),
+                                               ByVal checkSuccessCode As Boolean) As Task(Of Tuple(Of Uri, Object))
+            logger.Debug("Placing POST request asynchronously")
             Dim retTuple As Tuple(Of Uri, Object) = Nothing
 
             Dim lastException As Exception = Nothing
@@ -574,6 +570,7 @@ Namespace Network
                 AddHandler Waiter.Heartbeat, AddressOf OnHeartbeat
                 AddHandler Waiter.WaitingFor, AddressOf OnWaitingFor
 
+                Dim postString As String = Await usablePostContent.ReadAsStringAsync.ConfigureAwait(False)
                 For retryCtr = 1 To MaxReTries
                     _canceller.Token.ThrowIfCancellationRequested()
                     retTuple = Nothing
@@ -582,30 +579,25 @@ Namespace Network
                     response = Nothing
 
                     RaiseEvent DocumentRetryStatus(retryCtr, MaxReTries)
-                    'Dim usableContent As HttpContent = New FormUrlEncodedContent(postContent)
                     request = New HttpRequestMessage() With
                     {
                         .RequestUri = New Uri(postURL),
                         .Method = HttpMethod.Post,
-                        .Content = usablePostContent
+                        .Content = New StringContent(postString, Text.Encoding.UTF8, "application/x-www-form-urlencoded")
                     }
+                    OnHeartbeat(String.Format("Opening URL using POST request (URL:{0}, content:{1})", postURL, Await request.Content.ReadAsStringAsync().ConfigureAwait(False)))
                     Try
                         AddHeaders(request, referalURL, useRandomUserAgent, headers)
 
-                        Console.WriteLine(postURL)
-                        'For Each cookie As Cookie In _AllCookies.GetCookies(New Uri("http://kite.zerodha.com"))
-                        '    Console.WriteLine("Name = {0} ; Value = {1} ; Domain = {2}", cookie.Name, cookie.Value,
-                        '              cookie.Domain)
-
-                        'Next
-
                         _canceller.Token.ThrowIfCancellationRequested()
                         response = Await _httpInstance.SendAsync(request, _canceller.Token).ConfigureAwait(False)
-                        response.EnsureSuccessStatusCode()
+                        If checkSuccessCode Then response.EnsureSuccessStatusCode()
                         _canceller.Token.ThrowIfCancellationRequested()
 
-                        Dim tempRet = Await GenerateResponseOutputAsync(response).ConfigureAwait(False)
+                        logger.Debug("Processing response")
+                        Dim tempRet = Await GenerateResponseOutputAsync(response, Nothing).ConfigureAwait(False)
                         If tempRet IsNot Nothing Then
+                            logger.Debug("Processing object to be returned (Response URL:{0})", response.RequestMessage.RequestUri)
                             lastException = Nothing
                             allOKWithoutException = True
                             retTuple = New Tuple(Of Uri, Object)(response.RequestMessage.RequestUri, tempRet)
@@ -630,7 +622,7 @@ Namespace Network
                                 Waiter.SleepRequiredDuration(WaitDurationOnAnyFailure.TotalSeconds, "Non-explicit cancellation")
                                 _canceller.Token.ThrowIfCancellationRequested()
                             Else
-                                logger.Debug("HTTP->Task was cancelled due to internet problem:{0}",
+                                logger.Debug("HTTP->Task was cancelled due to internet problem:{0}, waited prescribed seconds, will now retry",
                                              opx.Message)
                                 'Since internet was down, no need to consume retries
                                 retryCtr -= 1
@@ -639,6 +631,7 @@ Namespace Network
                     Catch hex As HttpRequestException
                         logger.Error(hex)
                         lastException = hex
+
                         'Need to relogin, no point retrying
                         If (response IsNot Nothing AndAlso response.StatusCode = "400") Then
                             Throw New URLMisFormedException(hex.Message, hex, URLMisFormedException.TypeOfException.BadURL)
@@ -687,7 +680,7 @@ Namespace Network
                                 End If
                             End If
                         Else
-                            logger.Debug("HTTP->HttpRequestException with internet problem:{0}",
+                            logger.Debug("HTTP->HttpRequestException with internet problem:{0}, waited prescribed seconds, will now retry",
                                          hex.Message)
                             'Since internet was down, no need to consume retries
                             retryCtr -= 1
@@ -724,7 +717,7 @@ Namespace Network
                                 _canceller.Token.ThrowIfCancellationRequested()
                             End If
                         Else
-                            logger.Debug("HTTP->Exception with internet problem:{0}",
+                            logger.Debug("HTTP->Exception with internet problem:{0}, waited prescribed seconds, will now retry",
                                          ex.Message)
                             'Since internet was down, no need to consume retries
                             retryCtr -= 1
@@ -732,7 +725,7 @@ Namespace Network
                     Finally
                         OnDocumentDownloadComplete()
                         If response IsNot Nothing Then response.Dispose()
-                        Console.WriteLine(postURL)
+                        'Console.WriteLine(postURL)
                         'For Each cookie As Cookie In _AllCookies.GetCookies(New Uri("http://kite.zerodha.com"))
                         '    Console.WriteLine("Name = {0} ; Value = {1} ; Domain = {2}", cookie.Name, cookie.Value,
                         '              cookie.Domain)
@@ -756,18 +749,22 @@ Namespace Network
                                                ByVal referalURL As String,
                                                ByVal postContent As StringContent,
                                                ByVal useRandomUserAgent As Boolean,
-                                               ByVal headers As Dictionary(Of String, String)) As Task(Of Tuple(Of Uri, Object))
+                                               ByVal headers As Dictionary(Of String, String),
+                                               ByVal checkResponseCode As Boolean) As Task(Of Tuple(Of Uri, Object))
+            logger.Debug("Placing POST request with string content asynchronously")
             Dim usableContent As HttpContent = postContent
-            Return Await POSTRequestAsync(postURL, referalURL, usableContent, useRandomUserAgent, headers).ConfigureAwait(False)
+            Return Await POSTRequestAsync(postURL, referalURL, usableContent, useRandomUserAgent, headers, checkResponseCode).ConfigureAwait(False)
         End Function
 
         Public Async Function POSTRequestAsync(ByVal postURL As String,
                                                ByVal referalURL As String,
                                                ByVal postContent As Dictionary(Of String, String),
                                                ByVal useRandomUserAgent As Boolean,
-                                               ByVal headers As Dictionary(Of String, String)) As Task(Of Tuple(Of Uri, Object))
+                                               ByVal headers As Dictionary(Of String, String),
+                                               ByVal checkResponseCode As Boolean) As Task(Of Tuple(Of Uri, Object))
+            logger.Debug("Placing POST request with dictionary content asynchronously")
             Dim usableContent As HttpContent = New FormUrlEncodedContent(postContent)
-            Return Await POSTRequestAsync(postURL, referalURL, usableContent, useRandomUserAgent, headers).ConfigureAwait(False)
+            Return Await POSTRequestAsync(postURL, referalURL, usableContent, useRandomUserAgent, headers, checkResponseCode).ConfigureAwait(False)
         End Function
 
 #End Region
@@ -818,6 +815,5 @@ Namespace Network
             ' GC.SuppressFinalize(Me)
         End Sub
 #End Region
-
     End Class
 End Namespace
