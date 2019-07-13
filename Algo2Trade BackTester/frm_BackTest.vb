@@ -193,6 +193,9 @@ Public Class frm_BackTest
         ElseIf rdbLive.Checked Then
             _dataSource = Strategy.SourceOfData.Live
         End If
+        _includeSlippage = chkbIncludeSlippage.Checked
+        _bothSideSlippage = chkbBothSideSlippage.Checked
+        _slippageMultiplier = txtSlippageMultiplier.Text
         _cts = New CancellationTokenSource
         _cmn = New Common(_cts)
         btn_start.Enabled = False
@@ -295,7 +298,7 @@ Public Class frm_BackTest
                                                     Case Trade.TypeOfStock.Futures
                                                         Strategy.MarginMultiplier = 30
                                                 End Select
-                                                .NumberOfTradeableStockPerDay = 1
+                                                .NumberOfTradeableStockPerDay = 5
                                                 .NumberOfTradePerDay = Integer.MaxValue
                                                 .NumberOfTradePerStockPerDay = nmbrOfTrade
                                                 .CountTradesWithBreakevenMovement = countBreakevenTrades
