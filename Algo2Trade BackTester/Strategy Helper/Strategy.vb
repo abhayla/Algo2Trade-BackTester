@@ -651,7 +651,8 @@ Public MustInherit Class Strategy
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
                     If IncludeSlippage AndAlso BothSideSlippage Then
-                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint + slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss + slippage)
+                        'currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint + slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss + slippage)
+                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
                     End If
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
@@ -700,7 +701,8 @@ Public MustInherit Class Strategy
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
                     If IncludeSlippage AndAlso BothSideSlippage Then
-                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint - slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss - slippage)
+                        'currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint - slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss - slippage)
+                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
                     End If
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
@@ -754,7 +756,8 @@ Public MustInherit Class Strategy
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
                     If IncludeSlippage AndAlso BothSideSlippage Then
-                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint + slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss + slippage)
+                        'currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint + slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss + slippage)
+                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice + targetPoint)
                     End If
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
@@ -803,7 +806,8 @@ Public MustInherit Class Strategy
                         currentTrade.UpdateTrade(EntryPrice:=currentPayload.Open, EntryTime:=currentPayload.PayloadDate, TradeCurrentStatus:=Trade.TradeExecutionStatus.Inprogress)
                     End If
                     If IncludeSlippage AndAlso BothSideSlippage Then
-                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint - slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss - slippage)
+                        'currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint - slippage, PotentialStopLoss:=currentTrade.PotentialStopLoss - slippage)
+                        currentTrade.UpdateTrade(PotentialTarget:=currentTrade.EntryPrice - targetPoint)
                     End If
                     ret = New Tuple(Of Boolean, Date)(True, currentPayload.PayloadDate)
                 End If
