@@ -23,6 +23,7 @@ Public Class GenericStrategy
     Public Property ModifyTarget As Boolean = False
     Public Property ModifyStoploss As Boolean = False
     Public Property SameDirectionTrade As Boolean = False
+    Public Property StopAtTargetReach As Boolean = False
     Public Property NIFTY50Stocks As String()
 
     'For ATR Based Candle Range Strategy
@@ -213,17 +214,7 @@ Public Class GenericStrategy
 
                                 If XDayXMinuteHAPayload IsNot Nothing AndAlso XDayXMinuteHAPayload.Count > 0 Then
                                     'TODO: Change
-                                    Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
-                                        strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
-                                        strategyBaseRule.QuantityFlag = Me.QuantityFlag
-                                        strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
-                                        strategyBaseRule.FirstTradeTargetMultiplier = Me.FirstTradeTargetMultiplier
-                                        strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
-                                        strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
-                                        strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
-                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                    End Using
-                                    'Using strategyBaseRule As New OpenATRStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), Canceller, Cmn, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
+                                    'Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
                                     '    strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
                                     '    strategyBaseRule.QuantityFlag = Me.QuantityFlag
                                     '    strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
@@ -233,6 +224,10 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
+                                    Using strategyBaseRule As New VolumeReversalStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                        strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    End Using
                                 End If
                                 If XDayRuleOutputPayload IsNot Nothing Then
                                     If XDayRuleOutputPayload.ContainsKey("Signal") Then XDayRuleSignalPayload = CType(XDayRuleOutputPayload("Signal"), Dictionary(Of Date, EntryDetails))
@@ -707,6 +702,24 @@ Public Class GenericStrategy
 
                                             SetCurrentLTPForStock(currentMinuteCandlePayload, tick, Trade.TradeType.MIS)
 
+                                            'Stock MTM Check
+                                            If ExitOnStockFixedTargetStoploss Then
+                                                If StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) >= StockMaxProfitPerDay Then
+                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock Profit reached for the day")
+                                                ElseIf StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) <= StockMaxLossPerDay Then
+                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock Loss reached for the day")
+                                                End If
+                                            End If
+
+                                            'OverAll MTM Check
+                                            If ExitOnOverAllFixedTargetStoploss Then
+                                                If AllPLAfterBrokerage(tradeCheckingDate) >= OverAllProfitPerDay Then
+                                                    ExitAllTradeByForce(potentialTickSignalTime, currentDayOneMinuteStocksPayload, Trade.TradeType.MIS, "Max Profit reached for the day")
+                                                ElseIf AllPLAfterBrokerage(tradeCheckingDate) <= OverAllLossPerDay Then
+                                                    ExitAllTradeByForce(potentialTickSignalTime, currentDayOneMinuteStocksPayload, Trade.TradeType.MIS, "Max Loss reached for the day")
+                                                End If
+                                            End If
+
                                             'Enter Trade
                                             Dim potentialEntryTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Open)
                                             If potentialEntryTrades IsNot Nothing AndAlso potentialEntryTrades.Count > 0 Then
@@ -730,7 +743,7 @@ Public Class GenericStrategy
                                                                 tradeActive = IsTradeActive(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                                             End If
                                                             If Not tradeActive Then
-                                                                If IsAnyTradeOfTheStockTargetReached(currentMinuteCandlePayload, Trade.TradeType.MIS) Then
+                                                                If Me.StopAtTargetReach AndAlso IsAnyTradeOfTheStockTargetReached(currentMinuteCandlePayload, Trade.TradeType.MIS) Then
                                                                     CancelTrade(potentialEntryTrade, currentMinuteCandlePayload, "Previous Trade Target reached")
                                                                 Else
                                                                     If SameDirectionTrade Then
@@ -849,24 +862,6 @@ Public Class GenericStrategy
                                             '        StockPLPoint(tradeCheckingDate, tick.TradingSymbol) <= -0.1 Then
                                             '    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock PL Point reached for the day")
                                             'End If
-
-                                            'Stock MTM Check
-                                            If ExitOnStockFixedTargetStoploss Then
-                                                If StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) >= StockMaxProfitPerDay Then
-                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock Profit reached for the day")
-                                                ElseIf StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) <= StockMaxLossPerDay Then
-                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock Loss reached for the day")
-                                                End If
-                                            End If
-
-                                            'OverAll MTM Check
-                                            If ExitOnOverAllFixedTargetStoploss Then
-                                                If AllPLAfterBrokerage(tradeCheckingDate) >= OverAllProfitPerDay Then
-                                                    ExitAllTradeByForce(potentialTickSignalTime, currentDayOneMinuteStocksPayload, Trade.TradeType.MIS, "Max Profit reached for the day")
-                                                ElseIf AllPLAfterBrokerage(tradeCheckingDate) <= OverAllLossPerDay Then
-                                                    ExitAllTradeByForce(potentialTickSignalTime, currentDayOneMinuteStocksPayload, Trade.TradeType.MIS, "Max Loss reached for the day")
-                                                End If
-                                            End If
 
                                             'Exit Trade
                                             Dim potentialExitTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Inprogress)

@@ -122,6 +122,7 @@
     <Compile Include="JOYMABABA Strategy Rules\JOYMA_ATMStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\OpenATRStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\TrendReversalStrategyRule.vb" />
+    <Compile Include="JOYMABABA Strategy Rules\VolumeReversalStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\VWAPCandleImmediateBreakoutStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\VWAPSwingHighLowStrategyRule.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
