@@ -8,9 +8,9 @@ Public Class VWAPConfirmationStrategyRule
 
     'Public QuantityFlag As Integer = 1
     'Public MaxStoplossAmount As Decimal = 100
-    'Public FirstTradeTargetMultiplier As Decimal = 2
+    'Public FirstTradeTargetMultiplier As Decimal = 3
     'Public EarlyStoploss As Boolean = False
-    'Public ForwardTradeTargetMultiplier As Decimal = 3
+    Public ForwardTradeTargetMultiplier As Decimal = 3
     Public CapitalToBeUsed As Decimal = 20000
     'Public CandleBasedEntry As Boolean = False
 
@@ -81,10 +81,15 @@ Public Class VWAPConfirmationStrategyRule
                     'Dim modifyTargetPrice As Decimal = 0
                     Dim supporting1 As String = Nothing
                     Dim supporting2 As String = Nothing
-                    'Dim supporting3 As String = Nothing
+                    Dim supporting3 As String = Nothing
                     'Dim supporting4 As String = Nothing
                     'Dim supporting5 As String = Nothing
                     If runningPayload.Date = _tradingDate.Date Then
+                        entryData.BuyStoploss = ConvertFloorCeling(VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate), _tickSize, RoundOfType.Celing)
+                        entryData.BuyStoploss -= CalculateBuffer(entryData.BuyStoploss, RoundOfType.Floor)
+                        entryData.SellStoploss = ConvertFloorCeling(VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate), _tickSize, RoundOfType.Celing)
+                        entryData.SellStoploss += CalculateBuffer(entryData.BuyStoploss, RoundOfType.Floor)
+
                         If Not eligibleForSignalCheck Then
                             If _inputPayload(runningPayload).PreviousCandlePayload.High >= VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) AndAlso
                                 _inputPayload(runningPayload).PreviousCandlePayload.Low <= VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) Then
@@ -111,12 +116,58 @@ Public Class VWAPConfirmationStrategyRule
                                 End If
                             End If
                         End If
+                        'Check Confirmation
+                        If signalCandle IsNot Nothing AndAlso vwapSide <> SideOfVWAP.None AndAlso
+                            Not _inputPayload(runningPayload).PreviousCandlePayload.BlankCandle Then
+                            If vwapSide = SideOfVWAP.Above Then
+                                If _inputPayload(runningPayload).PreviousCandlePayload.CandleColor = Color.Red OrElse
+                                    _inputPayload(runningPayload).PreviousCandlePayload.Low < signalCandle.Low Then
+                                    confirmationCandle = _inputPayload(runningPayload).PreviousCandlePayload
+                                    potentialHighEntryPrice = confirmationCandle.High
+                                    potentialHighEntryPrice += CalculateBuffer(potentialHighEntryPrice, RoundOfType.Floor)
+                                End If
+                            ElseIf vwapSide = SideOfVWAP.Below Then
+                                If _inputPayload(runningPayload).PreviousCandlePayload.CandleColor = Color.Green OrElse
+                                    _inputPayload(runningPayload).PreviousCandlePayload.High > signalCandle.High Then
+                                    confirmationCandle = _inputPayload(runningPayload).PreviousCandlePayload
+                                    potentialLowEntryPrice = confirmationCandle.Low
+                                    potentialLowEntryPrice -= CalculateBuffer(potentialLowEntryPrice, RoundOfType.Floor)
+                                End If
+                            End If
+                        End If
+                        'Check Signal
+                        If eligibleForSignalCheck AndAlso signalCandle Is Nothing AndAlso
+                            Not _inputPayload(runningPayload).PreviousCandlePayload.BlankCandle Then
+                            If _inputPayload(runningPayload).PreviousCandlePayload.Low > VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) Then
+                                signalCandle = _inputPayload(runningPayload).PreviousCandlePayload
+                                vwapSide = SideOfVWAP.Above
+                            ElseIf _inputPayload(runningPayload).PreviousCandlePayload.High < VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) Then
+                                signalCandle = _inputPayload(runningPayload).PreviousCandlePayload
+                                vwapSide = SideOfVWAP.Below
+                            End If
+                            If signalCandle IsNot Nothing Then
+                                If vwapSide = SideOfVWAP.Above Then
+                                    If signalCandle.CandleColor = Color.Red Then
+                                        confirmationCandle = signalCandle
+                                        potentialHighEntryPrice = confirmationCandle.High
+                                        potentialHighEntryPrice += CalculateBuffer(potentialHighEntryPrice, RoundOfType.Floor)
+                                    End If
+                                ElseIf vwapSide = SideOfVWAP.Below Then
+                                    If signalCandle.CandleColor = Color.Green Then
+                                        confirmationCandle = signalCandle
+                                        potentialLowEntryPrice = confirmationCandle.Low
+                                        potentialLowEntryPrice -= CalculateBuffer(potentialLowEntryPrice, RoundOfType.Floor)
+                                    End If
+                                End If
+                            End If
+                        End If
 
+                        'Check Breakout
                         If potentialHighEntryPrice <> 0 AndAlso _inputPayload(runningPayload).High >= potentialHighEntryPrice Then
                             entryData.BuySignal = 1
                             entryData.BuyEntry = potentialHighEntryPrice
-                            entryData.BuyStoploss = Math.Min(entryData.BuyEntry - ConvertFloorCeling(entryData.BuyEntry * 0.3 / 100, _tickSize, RoundOfType.Celing), signalCandle.Low - CalculateBuffer(signalCandle.Low, RoundOfType.Floor))
-                            entryData.BuyTarget = entryData.BuyEntry + ConvertFloorCeling((entryData.BuyEntry - entryData.BuyStoploss) * 1.1, _tickSize, RoundOfType.Celing)
+                            'entryData.BuyStoploss = Math.Min(entryData.BuyEntry - ConvertFloorCeling(entryData.BuyEntry * 0.3 / 100, _tickSize, RoundOfType.Celing), signalCandle.Low - CalculateBuffer(signalCandle.Low, RoundOfType.Floor))
+                            entryData.BuyTarget = entryData.BuyEntry + ConvertFloorCeling(ATRPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) * ForwardTradeTargetMultiplier, _tickSize, RoundOfType.Celing)
 
                             If _firstEntryQuantity = 0 Then
                                 Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
@@ -128,19 +179,21 @@ Public Class VWAPConfirmationStrategyRule
                                 entryData.BuyQuantity = _firstEntryQuantity
                             End If
                             supporting1 = signalCandle.PayloadDate.ToShortTimeString
-                            supporting2 = If(entryData.BuyStoploss = signalCandle.Low - CalculateBuffer(signalCandle.Low, RoundOfType.Floor), "Low", "0.3%")
+                            supporting2 = confirmationCandle.PayloadDate.ToShortTimeString
+                            supporting3 = ATRPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate)
 
                             signalCandle = Nothing
                             confirmationCandle = Nothing
                             vwapSide = SideOfVWAP.None
                             potentialHighEntryPrice = 0
                             potentialLowEntryPrice = 0
+                            eligibleForSignalCheck = False
                         End If
                         If potentialLowEntryPrice <> 0 AndAlso _inputPayload(runningPayload).Low <= potentialLowEntryPrice Then
                             entryData.SellSignal = -1
                             entryData.SellEntry = potentialLowEntryPrice
-                            entryData.SellStoploss = Math.Max(entryData.SellEntry + ConvertFloorCeling(entryData.SellEntry * 0.3 / 100, _tickSize, RoundOfType.Celing), signalCandle.High + CalculateBuffer(signalCandle.High, RoundOfType.Floor))
-                            entryData.SellTarget = entryData.SellEntry - ConvertFloorCeling((entryData.SellStoploss - entryData.SellEntry) * 1.1, _tickSize, RoundOfType.Celing)
+                            'entryData.SellStoploss = Math.Max(entryData.SellEntry + ConvertFloorCeling(entryData.SellEntry * 0.3 / 100, _tickSize, RoundOfType.Celing), signalCandle.High + CalculateBuffer(signalCandle.High, RoundOfType.Floor))
+                            entryData.SellTarget = entryData.SellEntry - ConvertFloorCeling(ATRPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) * ForwardTradeTargetMultiplier, _tickSize, RoundOfType.Celing)
 
                             If _firstEntryQuantity = 0 Then
                                 Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
@@ -152,13 +205,15 @@ Public Class VWAPConfirmationStrategyRule
                                 entryData.SellQuantity = _firstEntryQuantity
                             End If
                             supporting1 = signalCandle.PayloadDate.ToShortTimeString
-                            supporting2 = If(entryData.SellStoploss = signalCandle.High + CalculateBuffer(signalCandle.High, RoundOfType.Floor), "High", "0.3%")
+                            supporting2 = confirmationCandle.PayloadDate.ToShortTimeString
+                            supporting3 = ATRPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate)
 
                             signalCandle = Nothing
                             confirmationCandle = Nothing
                             vwapSide = SideOfVWAP.None
                             potentialHighEntryPrice = 0
                             potentialLowEntryPrice = 0
+                            eligibleForSignalCheck = False
                         End If
                     End If
 
@@ -182,8 +237,8 @@ Public Class VWAPConfirmationStrategyRule
                         outputSupporting1Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting1)
                         If outputSupporting2Payload Is Nothing Then outputSupporting2Payload = New Dictionary(Of Date, String)
                         outputSupporting2Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting2)
-                        'If outputSupporting3Payload Is Nothing Then outputSupporting3Payload = New Dictionary(Of Date, String)
-                        'outputSupporting3Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting3)
+                        If outputSupporting3Payload Is Nothing Then outputSupporting3Payload = New Dictionary(Of Date, String)
+                        outputSupporting3Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting3)
                         'If outputSupporting4Payload Is Nothing Then outputSupporting4Payload = New Dictionary(Of Date, String)
                         'outputSupporting4Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting4)
                         'If outputSupporting5Payload Is Nothing Then outputSupporting5Payload = New Dictionary(Of Date, String)

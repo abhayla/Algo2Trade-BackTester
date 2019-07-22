@@ -132,9 +132,9 @@ Public Class GenericStrategy
                     'Dim XDayRuleTargetStocksPayload As Dictionary(Of String, Dictionary(Of Date, Decimal)) = Nothing
                     'Dim XDayRuleStoplossStocksPayload As Dictionary(Of String, Dictionary(Of Date, Decimal)) = Nothing
                     'Dim XDayRuleQuantityStocksPayload As Dictionary(Of String, Dictionary(Of Date, Integer)) = Nothing
+                    'Dim XDayRuleModifyStoplossStocksPayload As Dictionary(Of String, Dictionary(Of Date, Decimal)) = Nothing
+                    'Dim XDayRuleModifyTargetStocksPayload As Dictionary(Of String, Dictionary(Of Date, Decimal)) = Nothing
 
-                    Dim XDayRuleModifyStoplossStocksPayload As Dictionary(Of String, Dictionary(Of Date, Decimal)) = Nothing
-                    Dim XDayRuleModifyTargetStocksPayload As Dictionary(Of String, Dictionary(Of Date, Decimal)) = Nothing
                     Dim XDayRuleSupporting1StocksPayload As Dictionary(Of String, Dictionary(Of Date, String)) = Nothing
                     Dim XDayRuleSupporting2StocksPayload As Dictionary(Of String, Dictionary(Of Date, String)) = Nothing
                     Dim XDayRuleSupporting3StocksPayload As Dictionary(Of String, Dictionary(Of Date, String)) = Nothing
@@ -161,8 +161,8 @@ Public Class GenericStrategy
                         'Dim XDayRuleStoplossPayload As Dictionary(Of Date, Decimal) = Nothing
                         'Dim XDayRuleQuantityPayload As Dictionary(Of Date, Integer) = Nothing
 
-                        Dim XDayRuleModifyStoplossPayload As Dictionary(Of Date, Decimal) = Nothing
-                        Dim XDayRuleModifyTargetPayload As Dictionary(Of Date, Decimal) = Nothing
+                        'Dim XDayRuleModifyStoplossPayload As Dictionary(Of Date, Decimal) = Nothing
+                        'Dim XDayRuleModifyTargetPayload As Dictionary(Of Date, Decimal) = Nothing
                         Dim XDayRuleSupporting1Payload As Dictionary(Of Date, String) = Nothing
                         Dim XDayRuleSupporting2Payload As Dictionary(Of Date, String) = Nothing
                         Dim XDayRuleSupporting3Payload As Dictionary(Of Date, String) = Nothing
@@ -224,7 +224,12 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
-                                    Using strategyBaseRule As New VolumeReversalStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    'Using strategyBaseRule As New VolumeReversalStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
+                                    Using strategyBaseRule As New VWAPConfirmationStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                        strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     End Using
@@ -235,9 +240,9 @@ Public Class GenericStrategy
                                     'If XDayRuleOutputPayload.ContainsKey("Target") Then XDayRuleTargetPayload = CType(XDayRuleOutputPayload("Target"), Dictionary(Of Date, Decimal))
                                     'If XDayRuleOutputPayload.ContainsKey("Stoploss") Then XDayRuleStoplossPayload = CType(XDayRuleOutputPayload("Stoploss"), Dictionary(Of Date, Decimal))
                                     'If XDayRuleOutputPayload.ContainsKey("Quantity") Then XDayRuleQuantityPayload = CType(XDayRuleOutputPayload("Quantity"), Dictionary(Of Date, Integer))
+                                    'If XDayRuleOutputPayload.ContainsKey("ModifyStoploss") Then XDayRuleModifyStoplossPayload = CType(XDayRuleOutputPayload("ModifyStoploss"), Dictionary(Of Date, Decimal))
+                                    'If XDayRuleOutputPayload.ContainsKey("ModifyTarget") Then XDayRuleModifyTargetPayload = CType(XDayRuleOutputPayload("ModifyTarget"), Dictionary(Of Date, Decimal))
 
-                                    If XDayRuleOutputPayload.ContainsKey("ModifyStoploss") Then XDayRuleModifyStoplossPayload = CType(XDayRuleOutputPayload("ModifyStoploss"), Dictionary(Of Date, Decimal))
-                                    If XDayRuleOutputPayload.ContainsKey("ModifyTarget") Then XDayRuleModifyTargetPayload = CType(XDayRuleOutputPayload("ModifyTarget"), Dictionary(Of Date, Decimal))
                                     If XDayRuleOutputPayload.ContainsKey("Supporting1") Then XDayRuleSupporting1Payload = CType(XDayRuleOutputPayload("Supporting1"), Dictionary(Of Date, String))
                                     If XDayRuleOutputPayload.ContainsKey("Supporting2") Then XDayRuleSupporting2Payload = CType(XDayRuleOutputPayload("Supporting2"), Dictionary(Of Date, String))
                                     If XDayRuleOutputPayload.ContainsKey("Supporting3") Then XDayRuleSupporting3Payload = CType(XDayRuleOutputPayload("Supporting3"), Dictionary(Of Date, String))
@@ -264,10 +269,10 @@ Public Class GenericStrategy
                                 'If XDayRuleQuantityStocksPayload Is Nothing Then XDayRuleQuantityStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Integer))
                                 'XDayRuleQuantityStocksPayload.Add(stock, XDayRuleQuantityPayload)
 
-                                If XDayRuleModifyStoplossStocksPayload Is Nothing Then XDayRuleModifyStoplossStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
-                                XDayRuleModifyStoplossStocksPayload.Add(stock, XDayRuleModifyStoplossPayload)
-                                If XDayRuleModifyTargetStocksPayload Is Nothing Then XDayRuleModifyTargetStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
-                                XDayRuleModifyTargetStocksPayload.Add(stock, XDayRuleModifyTargetPayload)
+                                'If XDayRuleModifyStoplossStocksPayload Is Nothing Then XDayRuleModifyStoplossStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
+                                'XDayRuleModifyStoplossStocksPayload.Add(stock, XDayRuleModifyStoplossPayload)
+                                'If XDayRuleModifyTargetStocksPayload Is Nothing Then XDayRuleModifyTargetStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
+                                'XDayRuleModifyTargetStocksPayload.Add(stock, XDayRuleModifyTargetPayload)
                                 If XDayRuleSupporting1StocksPayload Is Nothing Then XDayRuleSupporting1StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
                                 XDayRuleSupporting1StocksPayload.Add(stock, XDayRuleSupporting1Payload)
                                 If XDayRuleSupporting2StocksPayload Is Nothing Then XDayRuleSupporting2StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
@@ -835,22 +840,43 @@ Public Class GenericStrategy
                                                         Dim modifiedStoploss As Decimal = 0
                                                         Dim modifiedTargetRemark As String = Nothing
                                                         Dim modifiedStoplossRemark As String = Nothing
-                                                        If ModifyTarget Then
-                                                            If XDayRuleModifyTargetStocksPayload.ContainsKey(stockName) AndAlso
-                                                                XDayRuleModifyTargetStocksPayload(stockName).ContainsKey(signalCheckTime) AndAlso
-                                                                XDayRuleModifyTargetStocksPayload(stockName)(signalCheckTime) <> 0 Then
-                                                                modifiedTarget = XDayRuleModifyTargetStocksPayload(stockName)(signalCheckTime)
-                                                                modifiedTargetRemark = String.Format("Modified Target: {0}, Time:{1}", modifiedTarget, signalCheckTime.ToShortTimeString)
-                                                                potentialModifyTrade.UpdateTrade(PotentialTarget:=modifiedTarget, TargetRemark:=modifiedTargetRemark)
+                                                        If potentialModifyTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
+                                                            If ModifyTarget Then
+                                                                If XDayRuleSignalStocksPayload.ContainsKey(stockName) AndAlso
+                                                                    XDayRuleSignalStocksPayload(stockName).ContainsKey(signalCheckTime) AndAlso
+                                                                    XDayRuleSignalStocksPayload(stockName)(signalCheckTime).BuyTarget <> 0 Then
+                                                                    modifiedTarget = XDayRuleSignalStocksPayload(stockName)(signalCheckTime).BuyTarget
+                                                                    modifiedTargetRemark = String.Format("Modified Target: {0}, Time:{1}", modifiedTarget, signalCheckTime.ToShortTimeString)
+                                                                    potentialModifyTrade.UpdateTrade(PotentialTarget:=modifiedTarget, TargetRemark:=modifiedTargetRemark)
+                                                                End If
                                                             End If
-                                                        End If
-                                                        If ModifyStoploss Then
-                                                            If XDayRuleModifyStoplossStocksPayload.ContainsKey(stockName) AndAlso
-                                                                XDayRuleModifyStoplossStocksPayload(stockName).ContainsKey(signalCheckTime) AndAlso
-                                                                XDayRuleModifyStoplossStocksPayload(stockName)(signalCheckTime) <> 0 Then
-                                                                modifiedStoploss = XDayRuleModifyStoplossStocksPayload(stockName)(signalCheckTime)
-                                                                modifiedStoplossRemark = String.Format("Modified Stoploss: {0}, Time:{1}", modifiedStoploss, signalCheckTime.ToShortTimeString)
-                                                                potentialModifyTrade.UpdateTrade(PotentialStopLoss:=modifiedStoploss, SLRemark:=modifiedStoplossRemark)
+                                                            If ModifyStoploss Then
+                                                                If XDayRuleSignalStocksPayload.ContainsKey(stockName) AndAlso
+                                                                    XDayRuleSignalStocksPayload(stockName).ContainsKey(signalCheckTime) AndAlso
+                                                                    XDayRuleSignalStocksPayload(stockName)(signalCheckTime).BuyStoploss <> 0 Then
+                                                                    modifiedStoploss = XDayRuleSignalStocksPayload(stockName)(signalCheckTime).BuyStoploss
+                                                                    modifiedStoplossRemark = String.Format("Modified Stoploss: {0}, Time:{1}", modifiedStoploss, signalCheckTime.ToShortTimeString)
+                                                                    potentialModifyTrade.UpdateTrade(PotentialStopLoss:=modifiedStoploss, SLRemark:=modifiedStoplossRemark)
+                                                                End If
+                                                            End If
+                                                        ElseIf potentialModifyTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
+                                                            If ModifyTarget Then
+                                                                If XDayRuleSignalStocksPayload.ContainsKey(stockName) AndAlso
+                                                                    XDayRuleSignalStocksPayload(stockName).ContainsKey(signalCheckTime) AndAlso
+                                                                    XDayRuleSignalStocksPayload(stockName)(signalCheckTime).SellTarget <> 0 Then
+                                                                    modifiedTarget = XDayRuleSignalStocksPayload(stockName)(signalCheckTime).SellTarget
+                                                                    modifiedTargetRemark = String.Format("Modified Target: {0}, Time:{1}", modifiedTarget, signalCheckTime.ToShortTimeString)
+                                                                    potentialModifyTrade.UpdateTrade(PotentialTarget:=modifiedTarget, TargetRemark:=modifiedTargetRemark)
+                                                                End If
+                                                            End If
+                                                            If ModifyStoploss Then
+                                                                If XDayRuleSignalStocksPayload.ContainsKey(stockName) AndAlso
+                                                                    XDayRuleSignalStocksPayload(stockName).ContainsKey(signalCheckTime) AndAlso
+                                                                    XDayRuleSignalStocksPayload(stockName)(signalCheckTime).SellStoploss <> 0 Then
+                                                                    modifiedStoploss = XDayRuleSignalStocksPayload(stockName)(signalCheckTime).SellStoploss
+                                                                    modifiedStoplossRemark = String.Format("Modified Stoploss: {0}, Time:{1}", modifiedStoploss, signalCheckTime.ToShortTimeString)
+                                                                    potentialModifyTrade.UpdateTrade(PotentialStopLoss:=modifiedStoploss, SLRemark:=modifiedStoplossRemark)
+                                                                End If
                                                             End If
                                                         End If
                                                     End If
@@ -979,8 +1005,8 @@ Public Class GenericStrategy
                     If currentDayOneMinuteStocksPayload IsNot Nothing Then currentDayOneMinuteStocksPayload.Clear()
                     If XDayXMinuteStocksPayload IsNot Nothing Then XDayXMinuteStocksPayload.Clear()
                     If XDayRuleSignalStocksPayload IsNot Nothing Then XDayRuleSignalStocksPayload.Clear()
-                    If XDayRuleModifyStoplossStocksPayload IsNot Nothing Then XDayRuleModifyStoplossStocksPayload.Clear()
-                    If XDayRuleModifyTargetStocksPayload IsNot Nothing Then XDayRuleModifyTargetStocksPayload.Clear()
+                    'If XDayRuleModifyStoplossStocksPayload IsNot Nothing Then XDayRuleModifyStoplossStocksPayload.Clear()
+                    'If XDayRuleModifyTargetStocksPayload IsNot Nothing Then XDayRuleModifyTargetStocksPayload.Clear()
                     If XDayRuleSupporting1StocksPayload IsNot Nothing Then XDayRuleSupporting1StocksPayload.Clear()
                     If XDayRuleSupporting2StocksPayload IsNot Nothing Then XDayRuleSupporting2StocksPayload.Clear()
                     If XDayRuleSupporting3StocksPayload IsNot Nothing Then XDayRuleSupporting3StocksPayload.Clear()
@@ -994,8 +1020,8 @@ Public Class GenericStrategy
                     currentDayOneMinuteStocksPayload = Nothing
                     XDayXMinuteStocksPayload = Nothing
                     XDayRuleSignalStocksPayload = Nothing
-                    XDayRuleModifyStoplossStocksPayload = Nothing
-                    XDayRuleModifyTargetStocksPayload = Nothing
+                    'XDayRuleModifyStoplossStocksPayload = Nothing
+                    'XDayRuleModifyTargetStocksPayload = Nothing
                     XDayRuleSupporting1StocksPayload = Nothing
                     XDayRuleSupporting2StocksPayload = Nothing
                     XDayRuleSupporting3StocksPayload = Nothing

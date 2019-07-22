@@ -242,7 +242,7 @@ Public Class frm_BackTest
 
             If endDate.Date < tradeEndDate Then tradeEndDate = endDate
             For timeframe As Integer = 1 To 1 Step 2
-                For firstTradeMultiplier As Double = 4 To 4 Step 1
+                For firstTradeMultiplier As Double = 3 To 3 Step 1
                     For trlng As Integer = 0 To 0 Step 1
                         For smdirectiocEntry As Integer = 1 To 1 Step 1
                             'If trlng = 0 And smdirectiocEntry = 1 Then Continue For
@@ -300,16 +300,16 @@ Public Class frm_BackTest
                                                 .CountTradesWithBreakevenMovement = countBreakevenTrades
                                                 .TrailingSL = trlng
                                                 .SameDirectionTrade = smdirectiocEntry
-                                                .ReverseSignalTrade = False
+                                                .ReverseSignalTrade = True
                                                 .ModifyTarget = False
-                                                .ModifyStoploss = False
+                                                .ModifyStoploss = True
                                                 .StopAtTargetReach = False
                                                 .ExitOnStockFixedTargetStoploss = False
                                                 .StockMaxProfitPerDay = Decimal.MaxValue
                                                 .StockMaxLossPerDay = Decimal.MinValue
-                                                .ExitOnOverAllFixedTargetStoploss = True
+                                                .ExitOnOverAllFixedTargetStoploss = False
                                                 .OverAllProfitPerDay = 10000
-                                                .OverAllLossPerDay = -5000
+                                                .OverAllLossPerDay = -10000
                                             End With
                                             Await backtestStrategy.TestStrategyAsync(tradeStartDate, tradeEndDate).ConfigureAwait(False)
                                         End Using

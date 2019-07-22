@@ -253,7 +253,7 @@ Public Class Payload
         End Get
     End Property
 
-    Private _DojiCandle As Double
+    Private _DojiCandle As Boolean
     Public ReadOnly Property DojiCandle As Boolean
         Get
             If Me.CandleBody < Me.CandleRange / 4 Then
@@ -262,6 +262,14 @@ Public Class Payload
                 _DojiCandle = False
             End If
             Return _DojiCandle
+        End Get
+    End Property
+
+    Private _BlankCandle As Boolean
+    Public ReadOnly Property BlankCandle As Boolean
+        Get
+            _BlankCandle = (Me.Open = Me.Close AndAlso Me.Open = Me.High AndAlso Me.Close = Me.Low)
+            Return _BlankCandle
         End Get
     End Property
 
