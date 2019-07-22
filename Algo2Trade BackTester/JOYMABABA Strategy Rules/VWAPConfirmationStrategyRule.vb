@@ -2,7 +2,7 @@
 Imports System.Threading
 Imports Utilities.Numbers
 
-Public Class VolumeReversalStrategyRule
+Public Class VWAPConfirmationStrategyRule
     Inherits StrategyRule
     Implements IDisposable
 
@@ -50,14 +50,18 @@ Public Class VolumeReversalStrategyRule
             Dim outputSupporting5Payload As Dictionary(Of Date, String) = Nothing
 
             If _inputPayload.LastOrDefault.Key.Date = _tradingDate.Date Then
+                Dim VWAPPayload As Dictionary(Of Date, Decimal) = Nothing
+                Indicator.VWAP.CalculateVWAP(_inputPayload, VWAPPayload)
+                Dim ATRPayload As Dictionary(Of Date, Decimal) = Nothing
+                Indicator.ATR.CalculateATR(14, _inputPayload, ATRPayload)
 
                 Dim firstCandleOfTheTradingDay As Boolean = True
                 Dim potentialHighEntryPrice As Decimal = 0
                 Dim potentialLowEntryPrice As Decimal = 0
                 Dim signalCandle As Payload = Nothing
-                Dim trendType As TypeOfTrend = TypeOfTrend.None
-                Dim firstTradeEnterd As Boolean = False
-                Dim lastSignal As Integer = 0
+                Dim confirmationCandle As Payload = Nothing
+                Dim vwapSide As SideOfVWAP = SideOfVWAP.None
+                Dim eligibleForSignalCheck As Boolean = False
                 Dim tradingSymbol As String = _inputPayload.LastOrDefault.Value.TradingSymbol
                 For Each runningPayload In _inputPayload.Keys
                     Dim entryData As New EntryDetails
@@ -81,76 +85,29 @@ Public Class VolumeReversalStrategyRule
                     'Dim supporting4 As String = Nothing
                     'Dim supporting5 As String = Nothing
                     If runningPayload.Date = _tradingDate.Date Then
-                        If _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PayloadDate.Date = _tradingDate.Date Then
-                            'If _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PayloadDate.Date = _tradingDate.Date AndAlso
-                            '_inputPayload(runningPayload).PreviousCandlePayload.Volume < _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.Volume AndAlso
-                            '_inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.Volume >= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.Volume AndAlso
-                            '_inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.Volume >= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.Volume Then
-                            Dim highTrend As Boolean = False
-                            Dim lowTrend As Boolean = False
-                            If _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.High >= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.High AndAlso
-                                _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.High >= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.High Then
-                                highTrend = True
-                            End If
-                            If _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.Low <= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.Low AndAlso
-                                _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.Low <= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.Low Then
-                                lowTrend = True
-                            End If
-                            If highTrend AndAlso Not lowTrend AndAlso
-                                _inputPayload(runningPayload).PreviousCandlePayload.Open <= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.High AndAlso
-                                _inputPayload(runningPayload).PreviousCandlePayload.Close <= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.High Then
-                                signalCandle = _inputPayload(runningPayload).PreviousCandlePayload
-                                trendType = TypeOfTrend.High
-                                potentialHighEntryPrice = 0
-                                potentialLowEntryPrice = signalCandle.Low
-                                potentialLowEntryPrice -= CalculateBuffer(potentialLowEntryPrice, Utilities.Numbers.NumberManipulation.RoundOfType.Floor)
-                                Dim lowestLow As Decimal = Math.Min(Math.Min(_inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.Low, _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.Low), _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.Low)
-                                If potentialLowEntryPrice <= lowestLow Then
-                                    signalCandle = Nothing
-                                    trendType = TypeOfTrend.None
-                                    potentialHighEntryPrice = 0
-                                    potentialLowEntryPrice = 0
-                                End If
-                            ElseIf lowTrend AndAlso Not highTrend AndAlso
-                                _inputPayload(runningPayload).PreviousCandlePayload.Open >= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.Low AndAlso
-                                _inputPayload(runningPayload).PreviousCandlePayload.Close >= _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.Low Then
-                                signalCandle = _inputPayload(runningPayload).PreviousCandlePayload
-                                trendType = TypeOfTrend.Low
-                                potentialHighEntryPrice = signalCandle.High
-                                potentialHighEntryPrice += CalculateBuffer(potentialHighEntryPrice, Utilities.Numbers.NumberManipulation.RoundOfType.Floor)
-                                potentialLowEntryPrice = 0
-                                Dim highestHigh As Decimal = Math.Max(Math.Max(_inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.High, _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.High), _inputPayload(runningPayload).PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.PreviousCandlePayload.High)
-                                If potentialHighEntryPrice >= highestHigh Then
-                                    signalCandle = Nothing
-                                    trendType = TypeOfTrend.None
-                                    potentialHighEntryPrice = 0
-                                    potentialLowEntryPrice = 0
-                                End If
+                        If Not eligibleForSignalCheck Then
+                            If _inputPayload(runningPayload).PreviousCandlePayload.High >= VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) AndAlso
+                                _inputPayload(runningPayload).PreviousCandlePayload.Low <= VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) Then
+                                eligibleForSignalCheck = True
                             End If
                         End If
                         'Signal cancellation
-                        If signalCandle IsNot Nothing AndAlso trendType <> TypeOfTrend.None Then
-                            If trendType = TypeOfTrend.High Then
-                                If _inputPayload(runningPayload).Open > signalCandle.PreviousCandlePayload.High OrElse
-                                    _inputPayload(runningPayload).Close > signalCandle.PreviousCandlePayload.High Then
-                                    If Not (_inputPayload(runningPayload).Low <= potentialLowEntryPrice AndAlso
-                                        _inputPayload(runningPayload).CandleColor = Color.Green) Then
-                                        signalCandle = Nothing
-                                        trendType = TypeOfTrend.None
-                                        potentialHighEntryPrice = 0
-                                        potentialLowEntryPrice = 0
-                                    End If
+                        If signalCandle IsNot Nothing AndAlso vwapSide <> SideOfVWAP.None Then
+                            If vwapSide = SideOfVWAP.Above Then
+                                If _inputPayload(runningPayload).PreviousCandlePayload.Close < VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) Then
+                                    signalCandle = Nothing
+                                    confirmationCandle = Nothing
+                                    vwapSide = SideOfVWAP.None
+                                    potentialHighEntryPrice = 0
+                                    potentialLowEntryPrice = 0
                                 End If
-                            ElseIf trendType = TypeOfTrend.Low Then
-                                If _inputPayload(runningPayload).Open < signalCandle.PreviousCandlePayload.Low OrElse
-                                    _inputPayload(runningPayload).Close < signalCandle.PreviousCandlePayload.Low Then
-                                    If Not (_inputPayload(runningPayload).High >= potentialHighEntryPrice AndAlso
-                                        _inputPayload(runningPayload).CandleColor = Color.Red) Then
-                                        signalCandle = Nothing
-                                        trendType = TypeOfTrend.None
-                                        potentialHighEntryPrice = 0
-                                        potentialLowEntryPrice = 0
-                                    End If
+                            ElseIf vwapSide = SideOfVWAP.Below Then
+                                If _inputPayload(runningPayload).PreviousCandlePayload.Close > VWAPPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) Then
+                                    signalCandle = Nothing
+                                    confirmationCandle = Nothing
+                                    vwapSide = SideOfVWAP.None
+                                    potentialHighEntryPrice = 0
+                                    potentialLowEntryPrice = 0
                                 End If
                             End If
                         End If
@@ -174,7 +131,8 @@ Public Class VolumeReversalStrategyRule
                             supporting2 = If(entryData.BuyStoploss = signalCandle.Low - CalculateBuffer(signalCandle.Low, RoundOfType.Floor), "Low", "0.3%")
 
                             signalCandle = Nothing
-                            trendType = TypeOfTrend.None
+                            confirmationCandle = Nothing
+                            vwapSide = SideOfVWAP.None
                             potentialHighEntryPrice = 0
                             potentialLowEntryPrice = 0
                         End If
@@ -197,7 +155,8 @@ Public Class VolumeReversalStrategyRule
                             supporting2 = If(entryData.SellStoploss = signalCandle.High + CalculateBuffer(signalCandle.High, RoundOfType.Floor), "High", "0.3%")
 
                             signalCandle = Nothing
-                            trendType = TypeOfTrend.None
+                            confirmationCandle = Nothing
+                            vwapSide = SideOfVWAP.None
                             potentialHighEntryPrice = 0
                             potentialLowEntryPrice = 0
                         End If
@@ -281,9 +240,9 @@ Public Class VolumeReversalStrategyRule
     End Sub
 #End Region
 
-    Enum TypeOfTrend
-        High = 1
-        Low
+    Enum SideOfVWAP
+        Above = 1
+        Below
         None
     End Enum
 End Class
