@@ -242,7 +242,7 @@ Public Class frm_BackTest
 
             If endDate.Date < tradeEndDate Then tradeEndDate = endDate
             For timeframe As Integer = 1 To 1 Step 2
-                For firstTradeMultiplier As Double = 3 To 3 Step 1
+                For targetMultiplier As Double = 4 To 4 Step 1
                     For trlng As Integer = 0 To 0 Step 1
                         For smdirectiocEntry As Integer = 1 To 1 Step 1
                             'If trlng = 0 And smdirectiocEntry = 1 Then Continue For
@@ -278,9 +278,8 @@ Public Class frm_BackTest
                                                 '1 from investment, 2 from SL, 3 from futures lot
                                                 .QuantityFlag = 3
                                                 .MaxStoplossAmount = 1000
-                                                .FirstTradeTargetMultiplier = firstTradeMultiplier
+                                                .TradeTargetMultiplier = targetMultiplier
                                                 .EarlyStoploss = False
-                                                .ForwardTradeTargetMultiplier = firstTradeMultiplier
                                                 .CapitalToBeUsed = 20000
                                                 .CandleBasedEntry = True
 
@@ -302,14 +301,14 @@ Public Class frm_BackTest
                                                 .SameDirectionTrade = smdirectiocEntry
                                                 .ReverseSignalTrade = True
                                                 .ModifyTarget = False
-                                                .ModifyStoploss = True
-                                                .StopAtTargetReach = False
+                                                .ModifyStoploss = False
+                                                .StopAtTargetReach = True
                                                 .ExitOnStockFixedTargetStoploss = False
                                                 .StockMaxProfitPerDay = Decimal.MaxValue
                                                 .StockMaxLossPerDay = Decimal.MinValue
                                                 .ExitOnOverAllFixedTargetStoploss = False
-                                                .OverAllProfitPerDay = 10000
-                                                .OverAllLossPerDay = -10000
+                                                .OverAllProfitPerDay = Decimal.MaxValue
+                                                .OverAllLossPerDay = Decimal.MinValue
                                             End With
                                             Await backtestStrategy.TestStrategyAsync(tradeStartDate, tradeEndDate).ConfigureAwait(False)
                                         End Using

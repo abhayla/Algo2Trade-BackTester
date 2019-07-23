@@ -30,9 +30,8 @@ Public Class GenericStrategy
     Public QuantityFlag As Integer = 1
     Public MaxStoplossAmount As Decimal = 100
     Public StockFileName As String = Nothing
-    Public FirstTradeTargetMultiplier As Decimal = 2
+    Public TradeTargetMultiplier As Decimal = 3
     Public EarlyStoploss As Boolean = False
-    Public ForwardTradeTargetMultiplier As Decimal = 3
     Public CapitalToBeUsed As Decimal = 20000
     Public CandleBasedEntry As Boolean = False
     'End
@@ -83,7 +82,7 @@ Public Class GenericStrategy
                                                Me.CountTradesWithBreakevenMovement,
                                                Me.OverAllLossPerDay,
                                                Me.NumberOfTradePerStockPerDay,
-                                               Me.FirstTradeTargetMultiplier)
+                                               Me.TradeTargetMultiplier)
 
         Dim tradesFileName As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.Trades.a2t", filename))
         Dim capitalFileName As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.Capital.a2t", filename))
@@ -218,9 +217,9 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
                                     '    strategyBaseRule.QuantityFlag = Me.QuantityFlag
                                     '    strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
-                                    '    strategyBaseRule.FirstTradeTargetMultiplier = Me.FirstTradeTargetMultiplier
+                                    '    strategyBaseRule.FirstTradeTargetMultiplier = Me.TradeTargetMultiplier
                                     '    strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
-                                    '    strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
+                                    '    strategyBaseRule.ForwardTradeTargetMultiplier = Me.TradeTargetMultiplier
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
@@ -228,9 +227,16 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
-                                    Using strategyBaseRule As New VWAPConfirmationStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
-                                        strategyBaseRule.ForwardTradeTargetMultiplier = Me.ForwardTradeTargetMultiplier
+                                    'Using strategyBaseRule As New VWAPConfirmationStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    '    strategyBaseRule.ForwardTradeTargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
+                                    Using strategyBaseRule As New ATMStrategyRule_2(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                        strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                        strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.SignalCandle
+                                        strategyBaseRule.ATRMultiplier = 1
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     End Using
                                 End If
@@ -1126,9 +1132,8 @@ Public Class GenericStrategy
                 QuantityFlag = Nothing
                 MaxStoplossAmount = Nothing
                 StockFileName = Nothing
-                FirstTradeTargetMultiplier = Nothing
+                TradeTargetMultiplier = Nothing
                 EarlyStoploss = Nothing
-                ForwardTradeTargetMultiplier = Nothing
                 CapitalToBeUsed = Nothing
                 CandleBasedEntry = Nothing
                 If _StockData IsNot Nothing Then _StockData.Clear()

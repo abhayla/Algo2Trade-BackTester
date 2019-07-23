@@ -112,6 +112,7 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Indicator Helper\IndicatorHelper.vb" />
+    <Compile Include="JOYMABABA Strategy Rules\ATMStrategyRule_2.vb" />
     <Compile Include="JOYMABABA Strategy Rules\ATRBasedCandleRangeStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\ATRBandBasedCandleRangeStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\CrudeoilCandleRangeBreakoutStrategyRule.vb" />
