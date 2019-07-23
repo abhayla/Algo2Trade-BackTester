@@ -235,7 +235,7 @@ Public Class GenericStrategy
                                     Using strategyBaseRule As New ATMStrategyRule_2(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
                                         strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
-                                        strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.SignalCandle
+                                        strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
                                         strategyBaseRule.ATRMultiplier = 1
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     End Using
