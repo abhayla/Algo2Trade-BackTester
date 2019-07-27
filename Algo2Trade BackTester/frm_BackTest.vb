@@ -274,6 +274,7 @@ Public Class frm_BackTest
                                                 .AmountToBeWithdrawn = 100000
 
                                                 .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
+                                                '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "BANKNIFTY Stock List.csv")
 
                                                 '1 from investment, 2 from SL, 3 from futures lot
                                                 .QuantityFlag = 3
@@ -291,7 +292,7 @@ Public Class frm_BackTest
                                                     Case Trade.TypeOfStock.Currency
                                                         Strategy.MarginMultiplier = 70
                                                     Case Trade.TypeOfStock.Futures
-                                                        Strategy.MarginMultiplier = 30
+                                                        Strategy.MarginMultiplier = 64
                                                 End Select
                                                 .NumberOfTradeableStockPerDay = 5
                                                 .NumberOfTradePerDay = Integer.MaxValue
@@ -303,12 +304,13 @@ Public Class frm_BackTest
                                                 .ModifyTarget = False
                                                 .ModifyStoploss = False
                                                 .StopAtTargetReach = True
+                                                .EntryAtOneMinuteCandleOpen = False
                                                 .ExitOnStockFixedTargetStoploss = False
                                                 .StockMaxProfitPerDay = Decimal.MaxValue
                                                 .StockMaxLossPerDay = Decimal.MinValue
                                                 .ExitOnOverAllFixedTargetStoploss = False
                                                 .OverAllProfitPerDay = Decimal.MaxValue
-                                                .OverAllLossPerDay = Decimal.MinValue
+                                                .OverAllLossPerDay = overAllLoss * -1
                                             End With
                                             Await backtestStrategy.TestStrategyAsync(tradeStartDate, tradeEndDate).ConfigureAwait(False)
                                         End Using
@@ -684,6 +686,14 @@ Public Class frm_BackTest
                 End If
             Next
         End If
+        Return ret
+    End Function
+#End Region
+
+#Region "Make Single Stock CSV File"
+    Private Function MakeSingleStockCSVFile(ByVal instrmentName As String) As String
+        Dim ret As String = Nothing
+
         Return ret
     End Function
 #End Region

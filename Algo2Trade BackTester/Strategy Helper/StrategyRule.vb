@@ -62,7 +62,7 @@ Public MustInherit Class StrategyRule
         Next
         Return previousQuantity
     End Function
-    Protected Enum SignalType
+    Protected Enum TypeOfSignal
         Buy = 1
         Sell
         None

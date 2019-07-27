@@ -24,7 +24,7 @@ Public Class FractalCutMARule
             Indicator.SMA.CalculateSMA(50, Payload.PayloadFields.Close, _inputPayload, SMA50Payload)
             Indicator.SMA.CalculateSMA(200, Payload.PayloadFields.Close, _inputPayload, SMA200Payload)
 
-            Dim dummySignal As SignalType = SignalType.None
+            Dim dummySignal As TypeOfSignal = TypeOfSignal.None
             Dim dummySignalFractal As Decimal = 0
             For Each runningPayload In _inputPayload.Keys
                 Dim signal As Integer = 0
@@ -34,22 +34,22 @@ Public Class FractalCutMARule
                 Dim quantity As Integer = 0
                 If _inputPayload(runningPayload).PreviousCandlePayload IsNot Nothing Then
                     If _inputPayload(runningPayload).PreviousCandlePayload.PayloadDate.Date <> runningPayload.Date Then
-                        dummySignal = SignalType.None
+                        dummySignal = TypeOfSignal.None
                     End If
                     If fractalHighPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) > SMA50Payload(runningPayload) AndAlso
                     fractalHighPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) > SMA200Payload(runningPayload) AndAlso
                     fractalHighPayload(runningPayload) < SMA50Payload(runningPayload) AndAlso
                     fractalHighPayload(runningPayload) < SMA200Payload(runningPayload) Then
-                        dummySignal = SignalType.Buy
+                        dummySignal = TypeOfSignal.Buy
                         dummySignalFractal = fractalHighPayload(runningPayload)
                     ElseIf fractalLowPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) < SMA50Payload(runningPayload) AndAlso
                         fractalLowPayload(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate) < SMA200Payload(runningPayload) AndAlso
                         fractalLowPayload(runningPayload) > SMA50Payload(runningPayload) AndAlso
                         fractalLowPayload(runningPayload) > SMA200Payload(runningPayload) Then
-                        dummySignal = SignalType.Sell
+                        dummySignal = TypeOfSignal.Sell
                         dummySignalFractal = fractalLowPayload(runningPayload)
                     End If
-                    If dummySignal = SignalType.Buy Then
+                    If dummySignal = TypeOfSignal.Buy Then
                         If _inputPayload(runningPayload).High > fractalHighPayload(runningPayload) AndAlso
                             fractalHighPayload(runningPayload) = dummySignalFractal Then
                             signal = 1
@@ -60,9 +60,9 @@ Public Class FractalCutMARule
                             targetPrice = entryPrice + (entryPrice - slPrice) * 1
                             'quantity = _lotsize
                             quantity = CalculateQuantityFromSL(_inputPayload(runningPayload).TradingSymbol, entryPrice, slPrice, -2000, Trade.TypeOfStock.Cash)
-                            dummySignal = SignalType.None
+                            dummySignal = TypeOfSignal.None
                         End If
-                    ElseIf dummySignal = SignalType.Sell Then
+                    ElseIf dummySignal = TypeOfSignal.Sell Then
                         If _inputPayload(runningPayload).Low < fractalLowPayload(runningPayload) AndAlso
                             fractalLowPayload(runningPayload) = dummySignalFractal Then
                             signal = -1
@@ -73,7 +73,7 @@ Public Class FractalCutMARule
                             targetPrice = entryPrice - (slPrice - entryPrice) * 1
                             'quantity = _lotsize
                             quantity = CalculateQuantityFromSL(_inputPayload(runningPayload).TradingSymbol, slPrice, entryPrice, -2000, Trade.TypeOfStock.Cash)
-                            dummySignal = SignalType.None
+                            dummySignal = TypeOfSignal.None
                         End If
                     End If
                 End If

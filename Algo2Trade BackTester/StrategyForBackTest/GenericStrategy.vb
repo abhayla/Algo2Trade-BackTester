@@ -24,6 +24,7 @@ Public Class GenericStrategy
     Public Property ModifyStoploss As Boolean = False
     Public Property SameDirectionTrade As Boolean = False
     Public Property StopAtTargetReach As Boolean = False
+    Public Property EntryAtOneMinuteCandleOpen As Boolean = False
     Public Property NIFTY50Stocks As String()
 
     'For ATR Based Candle Range Strategy
@@ -232,13 +233,33 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
-                                    Using strategyBaseRule As New ATMStrategyRule_2(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    'Using strategyBaseRule As New ATMStrategyRule_2(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    '    strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
+                                    '    strategyBaseRule.ATRMultiplier = 1
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
+                                    'Using strategyBaseRule As New ATRBandHedging(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    '    strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
+                                    'Using strategyBaseRule As New DoubleVolumeATM(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    '    strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
+                                    '    strategyBaseRule.ATRMultiplier = 1
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
+                                    Using strategyBaseRule As New ATMGapStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType, stockList(stock)(2))
                                         strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                         strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
                                         strategyBaseRule.ATRMultiplier = 1
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     End Using
+
                                 End If
                                 If XDayRuleOutputPayload IsNot Nothing Then
                                     If XDayRuleOutputPayload.ContainsKey("Signal") Then XDayRuleSignalPayload = CType(XDayRuleOutputPayload("Signal"), Dictionary(Of Date, EntryDetails))
@@ -773,7 +794,14 @@ Public Class GenericStrategy
                                                                                                                     Math.Floor(currentMinuteCandlePayload.PayloadDate.Minute / _SignalTimeFrame) * _SignalTimeFrame, 0)
                                                                             If currentMinuteCandlePayload.PayloadDate >= exitMinuteBlock.AddMinutes(_SignalTimeFrame) Then
                                                                                 If IsAnyCandleClosesAboveOrBelow(currentMinuteBlock, exitMinuteBlock, XDayXMinuteStocksPayload(stockName), potentialEntryTrade) Then
-                                                                                    Dim placeOrderResponse As Tuple(Of Boolean, Date) = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                                    Dim placeOrderResponse As Tuple(Of Boolean, Date) = Nothing
+                                                                                    If Me.EntryAtOneMinuteCandleOpen Then
+                                                                                        If tick.Open = currentMinuteCandlePayload.Open AndAlso tick.PayloadDate = currentMinuteCandlePayload.Ticks.FirstOrDefault.PayloadDate Then
+                                                                                            placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                                        End If
+                                                                                    Else
+                                                                                        placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                                    End If
                                                                                     If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.Item1 Then
                                                                                         If timeChart Is Nothing Then timeChart = New Dictionary(Of String, Date)
                                                                                         timeChart(stockName) = placeOrderResponse.Item2
@@ -782,7 +810,14 @@ Public Class GenericStrategy
                                                                                 End If
                                                                             End If
                                                                         Else
-                                                                            Dim placeOrderResponse As Tuple(Of Boolean, Date) = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                            Dim placeOrderResponse As Tuple(Of Boolean, Date) = Nothing
+                                                                            If Me.EntryAtOneMinuteCandleOpen Then
+                                                                                If tick.Open = currentMinuteCandlePayload.Open AndAlso tick.PayloadDate = currentMinuteCandlePayload.Ticks.FirstOrDefault.PayloadDate Then
+                                                                                    placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                                End If
+                                                                            Else
+                                                                                placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                            End If
                                                                             If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.Item1 Then
                                                                                 If timeChart Is Nothing Then timeChart = New Dictionary(Of String, Date)
                                                                                 timeChart(stockName) = placeOrderResponse.Item2
@@ -802,7 +837,14 @@ Public Class GenericStrategy
                                                                         'End If
                                                                         If lastTrade Is Nothing OrElse
                                                                             (lastTrade IsNot Nothing AndAlso lastTrade.EntryDirection <> potentialEntryTrade.EntryDirection) Then
-                                                                            Dim placeOrderResponse As Tuple(Of Boolean, Date) = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                            Dim placeOrderResponse As Tuple(Of Boolean, Date) = Nothing
+                                                                            If Me.EntryAtOneMinuteCandleOpen Then
+                                                                                If tick.Open = currentMinuteCandlePayload.Open AndAlso tick.PayloadDate = currentMinuteCandlePayload.Ticks.FirstOrDefault.PayloadDate Then
+                                                                                    placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                                End If
+                                                                            Else
+                                                                                placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                            End If
                                                                             If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.Item1 Then
                                                                                 If timeChart Is Nothing Then timeChart = New Dictionary(Of String, Date)
                                                                                 timeChart(stockName) = placeOrderResponse.Item2

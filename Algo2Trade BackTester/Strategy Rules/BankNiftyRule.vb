@@ -5,7 +5,7 @@ Public Class BankNiftyRule
     Inherits StrategyRule
     Implements IDisposable
 
-    Private ReadOnly flag As StrategyRule.SignalType = SignalType.Sell
+    Private ReadOnly flag As StrategyRule.TypeOfSignal = TypeOfSignal.Sell
     Public Sub New(ByVal inputPayload As Dictionary(Of Date, Payload), ByVal tickSize As Decimal, ByVal quantity As Integer, ByVal canceller As CancellationTokenSource)
         MyBase.New(inputPayload, tickSize, quantity, canceller)
     End Sub
@@ -43,7 +43,7 @@ Public Class BankNiftyRule
                     'Dim signalPoint As Integer = randomNumber.Next(0, signalPayload.Ticks.Count)
                     If eodPayload.ContainsKey(previousTradingDay) AndAlso
                         Math.Abs((eodPayload(runningPayload.Date).Open / eodPayload(previousTradingDay).Close) - 1) * 100 >= 0 Then
-                        If flag = SignalType.Buy Then
+                        If flag = TypeOfSignal.Buy Then
                             signal = 1
                             entryPrice = signalPayload.Ticks.FindAll(Function(x)
                                                                          Return x.PayloadDate.Hour = 9 AndAlso x.PayloadDate.Minute = 16 AndAlso x.PayloadDate.Second >= 0
@@ -61,7 +61,7 @@ Public Class BankNiftyRule
                             slPoint = slPoint - adjustablePoint
                             slPrice = entryPrice - slPoint
                             targetPrice = entryPrice + targetPoint
-                        ElseIf flag = SignalType.Sell Then
+                        ElseIf flag = TypeOfSignal.Sell Then
                             signal = -1
                             entryPrice = signalPayload.Ticks.FindAll(Function(x)
                                                                          Return x.PayloadDate.Hour = 9 AndAlso x.PayloadDate.Minute = 16 AndAlso x.PayloadDate.Second >= 0
