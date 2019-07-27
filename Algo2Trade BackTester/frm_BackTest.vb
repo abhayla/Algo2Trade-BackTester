@@ -273,13 +273,15 @@ Public Class frm_BackTest
                                                 .MinimumEarnedCapitalToWithdraw = 400000
                                                 .AmountToBeWithdrawn = 100000
 
-                                                .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
+                                                '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
+                                                .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Pre Market Future Stock List Gap Based.csv")
                                                 '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "BANKNIFTY Stock List.csv")
 
                                                 '1 from investment, 2 from SL, 3 from futures lot
                                                 .QuantityFlag = 3
                                                 .MaxStoplossAmount = 1000
                                                 .TradeTargetMultiplier = targetMultiplier
+                                                .TradeStoplossMultiplier = 1
                                                 .EarlyStoploss = False
                                                 .CapitalToBeUsed = 20000
                                                 .CandleBasedEntry = True

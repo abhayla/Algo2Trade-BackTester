@@ -31,7 +31,8 @@ Public Class GenericStrategy
     Public QuantityFlag As Integer = 1
     Public MaxStoplossAmount As Decimal = 100
     Public StockFileName As String = Nothing
-    Public TradeTargetMultiplier As Decimal = 3
+    Public TradeTargetMultiplier As Decimal = 4
+    Public TradeStoplossMultiplier As Decimal = 1
     Public EarlyStoploss As Boolean = False
     Public CapitalToBeUsed As Decimal = 20000
     Public CandleBasedEntry As Boolean = False
@@ -149,6 +150,7 @@ Public Class GenericStrategy
                     'First lets build the payload for all the stocks
                     Dim stockCount As Integer = 0
                     'Dim stockData As Dictionary(Of String, Dictionary(Of Date, Payload)) = Nothing
+                    Dim eligibleStockCount As Integer = 0
                     For Each stock In stockList.Keys
                         stockCount += 1
                         Dim XDayOneMinutePayload As Dictionary(Of Date, Payload) = Nothing
@@ -252,12 +254,13 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.ATRMultiplier = 1
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
-                                    Using strategyBaseRule As New ATMGapStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType, stockList(stock)(2))
+                                    Using strategyBaseRule As New ATMGapStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType, stockList(stock)(2), stockList(stock)(3))
                                         strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                         strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
-                                        strategyBaseRule.ATRMultiplier = 1
+                                        strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                        If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                     End Using
 
                                 End If
@@ -281,45 +284,47 @@ Public Class GenericStrategy
                                     If XDayRuleOutputPayload.ContainsKey("Supporting9") Then XDayRuleSupporting9Payload = CType(XDayRuleOutputPayload("Supporting9"), Dictionary(Of Date, String))
                                     If XDayRuleOutputPayload.ContainsKey("Supporting10") Then XDayRuleSupporting10Payload = CType(XDayRuleOutputPayload("Supporting10"), Dictionary(Of Date, String))
                                 End If
-                                If currentDayOneMinuteStocksPayload Is Nothing Then currentDayOneMinuteStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Payload))
-                                currentDayOneMinuteStocksPayload.Add(stock, currentDayOneMinutePayload)
-                                If XDayXMinuteStocksPayload Is Nothing Then XDayXMinuteStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Payload))
-                                XDayXMinuteStocksPayload.Add(stock, XDayXMinutePayload)
-                                If XDayRuleSignalStocksPayload Is Nothing Then XDayRuleSignalStocksPayload = New Dictionary(Of String, Dictionary(Of Date, EntryDetails))
-                                XDayRuleSignalStocksPayload.Add(stock, XDayRuleSignalPayload)
-                                'If XDayRuleEntryStocksPayload Is Nothing Then XDayRuleEntryStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
-                                'XDayRuleEntryStocksPayload.Add(stock, XDayRuleEntryPayload)
-                                'If XDayRuleTargetStocksPayload Is Nothing Then XDayRuleTargetStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
-                                'XDayRuleTargetStocksPayload.Add(stock, XDayRuleTargetPayload)
-                                'If XDayRuleStoplossStocksPayload Is Nothing Then XDayRuleStoplossStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
-                                'XDayRuleStoplossStocksPayload.Add(stock, XDayRuleStoplossPayload)
-                                'If XDayRuleQuantityStocksPayload Is Nothing Then XDayRuleQuantityStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Integer))
-                                'XDayRuleQuantityStocksPayload.Add(stock, XDayRuleQuantityPayload)
+                                If XDayRuleSignalPayload IsNot Nothing Then
+                                    If currentDayOneMinuteStocksPayload Is Nothing Then currentDayOneMinuteStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Payload))
+                                    currentDayOneMinuteStocksPayload.Add(stock, currentDayOneMinutePayload)
+                                    If XDayXMinuteStocksPayload Is Nothing Then XDayXMinuteStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Payload))
+                                    XDayXMinuteStocksPayload.Add(stock, XDayXMinutePayload)
+                                    If XDayRuleSignalStocksPayload Is Nothing Then XDayRuleSignalStocksPayload = New Dictionary(Of String, Dictionary(Of Date, EntryDetails))
+                                    XDayRuleSignalStocksPayload.Add(stock, XDayRuleSignalPayload)
+                                    'If XDayRuleEntryStocksPayload Is Nothing Then XDayRuleEntryStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
+                                    'XDayRuleEntryStocksPayload.Add(stock, XDayRuleEntryPayload)
+                                    'If XDayRuleTargetStocksPayload Is Nothing Then XDayRuleTargetStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
+                                    'XDayRuleTargetStocksPayload.Add(stock, XDayRuleTargetPayload)
+                                    'If XDayRuleStoplossStocksPayload Is Nothing Then XDayRuleStoplossStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
+                                    'XDayRuleStoplossStocksPayload.Add(stock, XDayRuleStoplossPayload)
+                                    'If XDayRuleQuantityStocksPayload Is Nothing Then XDayRuleQuantityStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Integer))
+                                    'XDayRuleQuantityStocksPayload.Add(stock, XDayRuleQuantityPayload)
 
-                                'If XDayRuleModifyStoplossStocksPayload Is Nothing Then XDayRuleModifyStoplossStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
-                                'XDayRuleModifyStoplossStocksPayload.Add(stock, XDayRuleModifyStoplossPayload)
-                                'If XDayRuleModifyTargetStocksPayload Is Nothing Then XDayRuleModifyTargetStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
-                                'XDayRuleModifyTargetStocksPayload.Add(stock, XDayRuleModifyTargetPayload)
-                                If XDayRuleSupporting1StocksPayload Is Nothing Then XDayRuleSupporting1StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting1StocksPayload.Add(stock, XDayRuleSupporting1Payload)
-                                If XDayRuleSupporting2StocksPayload Is Nothing Then XDayRuleSupporting2StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting2StocksPayload.Add(stock, XDayRuleSupporting2Payload)
-                                If XDayRuleSupporting3StocksPayload Is Nothing Then XDayRuleSupporting3StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting3StocksPayload.Add(stock, XDayRuleSupporting3Payload)
-                                If XDayRuleSupporting4StocksPayload Is Nothing Then XDayRuleSupporting4StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting4StocksPayload.Add(stock, XDayRuleSupporting4Payload)
-                                If XDayRuleSupporting5StocksPayload Is Nothing Then XDayRuleSupporting5StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting5StocksPayload.Add(stock, XDayRuleSupporting5Payload)
-                                If XDayRuleSupporting6StocksPayload Is Nothing Then XDayRuleSupporting6StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting6StocksPayload.Add(stock, XDayRuleSupporting6Payload)
-                                If XDayRuleSupporting7StocksPayload Is Nothing Then XDayRuleSupporting7StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting7StocksPayload.Add(stock, XDayRuleSupporting7Payload)
-                                If XDayRuleSupporting8StocksPayload Is Nothing Then XDayRuleSupporting8StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting8StocksPayload.Add(stock, XDayRuleSupporting8Payload)
-                                If XDayRuleSupporting9StocksPayload Is Nothing Then XDayRuleSupporting9StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting9StocksPayload.Add(stock, XDayRuleSupporting9Payload)
-                                If XDayRuleSupporting10StocksPayload Is Nothing Then XDayRuleSupporting10StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
-                                XDayRuleSupporting10StocksPayload.Add(stock, XDayRuleSupporting10Payload)
+                                    'If XDayRuleModifyStoplossStocksPayload Is Nothing Then XDayRuleModifyStoplossStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
+                                    'XDayRuleModifyStoplossStocksPayload.Add(stock, XDayRuleModifyStoplossPayload)
+                                    'If XDayRuleModifyTargetStocksPayload Is Nothing Then XDayRuleModifyTargetStocksPayload = New Dictionary(Of String, Dictionary(Of Date, Decimal))
+                                    'XDayRuleModifyTargetStocksPayload.Add(stock, XDayRuleModifyTargetPayload)
+                                    If XDayRuleSupporting1StocksPayload Is Nothing Then XDayRuleSupporting1StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting1StocksPayload.Add(stock, XDayRuleSupporting1Payload)
+                                    If XDayRuleSupporting2StocksPayload Is Nothing Then XDayRuleSupporting2StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting2StocksPayload.Add(stock, XDayRuleSupporting2Payload)
+                                    If XDayRuleSupporting3StocksPayload Is Nothing Then XDayRuleSupporting3StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting3StocksPayload.Add(stock, XDayRuleSupporting3Payload)
+                                    If XDayRuleSupporting4StocksPayload Is Nothing Then XDayRuleSupporting4StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting4StocksPayload.Add(stock, XDayRuleSupporting4Payload)
+                                    If XDayRuleSupporting5StocksPayload Is Nothing Then XDayRuleSupporting5StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting5StocksPayload.Add(stock, XDayRuleSupporting5Payload)
+                                    If XDayRuleSupporting6StocksPayload Is Nothing Then XDayRuleSupporting6StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting6StocksPayload.Add(stock, XDayRuleSupporting6Payload)
+                                    If XDayRuleSupporting7StocksPayload Is Nothing Then XDayRuleSupporting7StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting7StocksPayload.Add(stock, XDayRuleSupporting7Payload)
+                                    If XDayRuleSupporting8StocksPayload Is Nothing Then XDayRuleSupporting8StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting8StocksPayload.Add(stock, XDayRuleSupporting8Payload)
+                                    If XDayRuleSupporting9StocksPayload Is Nothing Then XDayRuleSupporting9StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting9StocksPayload.Add(stock, XDayRuleSupporting9Payload)
+                                    If XDayRuleSupporting10StocksPayload Is Nothing Then XDayRuleSupporting10StocksPayload = New Dictionary(Of String, Dictionary(Of Date, String))
+                                    XDayRuleSupporting10StocksPayload.Add(stock, XDayRuleSupporting10Payload)
+                                End If
                             End If
                         End If
 
@@ -363,6 +368,7 @@ Public Class GenericStrategy
                         'XDayRuleSupporting10Payload = Nothing
                         'XDayRuleOutputPayload = Nothing
 #End Region
+                        If eligibleStockCount = Me.NumberOfTradeableStockPerDay Then Exit For
                     Next
                     'If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
                     '    If Data.PastIntradayData Is Nothing Then Data.PastIntradayData = New Dictionary(Of Date, Dictionary(Of String, Dictionary(Of Date, Payload)))
@@ -391,6 +397,9 @@ Public Class GenericStrategy
                                     potentialCandleSignalTime = potentialTickSignalTime
                                 End If
                                 For Each stockName In stockList.Keys
+                                    If Not currentDayOneMinuteStocksPayload.ContainsKey(stockName) Then
+                                        Continue For
+                                    End If
                                     ''indibar
                                     ''for setting 1% mtm exit for each stock
                                     'Me.StockMaxProfitPerDay = CalculatePL(stockName, stockList(stockName)(2), stockList(stockName)(2) + (stockList(stockName)(2) * 1 / 100), stockList(stockName)(0), stockList(stockName)(1), tradeStockType)
@@ -942,7 +951,12 @@ Public Class GenericStrategy
                                             If potentialExitTrades IsNot Nothing AndAlso potentialExitTrades.Count > 0 Then
                                                 Dim orderExited As Boolean = False
                                                 For Each potentialExitTrade In potentialExitTrades
-                                                    Dim exitOrderResponse As Tuple(Of Boolean, Date) = ExitTradeIfPossible(potentialExitTrade, tick, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                    Dim exitOrderResponse As Tuple(Of Boolean, Date) = Nothing
+                                                    Try
+                                                        exitOrderResponse = ExitTradeIfPossible(potentialExitTrade, tick, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                    Catch ex As Exception
+                                                        Throw ex
+                                                    End Try
                                                     If exitOrderResponse IsNot Nothing AndAlso exitOrderResponse.Item1 Then
                                                         If timeChart Is Nothing Then timeChart = New Dictionary(Of String, Date)
                                                         timeChart(stockName) = exitOrderResponse.Item2
@@ -1139,9 +1153,10 @@ Public Class GenericStrategy
                         Else
                             instrumentName = tradingSymbol
                         End If
-                        ret.Add(instrumentName, {dt.Rows(i).Item(5), dt.Rows(i).Item(5), dt.Rows(i).Item(3), dt.Rows(i).Item(4)})
+                        'ret.Add(instrumentName, {dt.Rows(i).Item(5), dt.Rows(i).Item(5), dt.Rows(i).Item(3), dt.Rows(i).Item(4)})
+                        ret.Add(instrumentName, {dt.Rows(i).Item(2), dt.Rows(i).Item(2), dt.Rows(i).Item(5), dt.Rows(i).Item(6)})
                         counter += 1
-                        If counter = Me.NumberOfTradeableStockPerDay Then Exit For
+                        'If counter = Me.NumberOfTradeableStockPerDay Then Exit For
                     End If
                 Next
             End If
