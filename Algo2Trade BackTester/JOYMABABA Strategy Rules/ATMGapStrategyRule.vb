@@ -59,15 +59,17 @@ Public Class ATMGapStrategyRule
             If _inputPayload.LastOrDefault.Key.Date = _tradingDate.Date Then
                 Dim gapExists As Boolean = False
                 If _inputPayload.ContainsKey(_signalCandleTime) AndAlso _inputPayload(_signalCandleTime).PreviousCandlePayload IsNot Nothing Then
-                    If _gapPercentage >= 0 Then
-                        If _inputPayload(_signalCandleTime).PreviousCandlePayload.Low - _lastDayClose > 0 AndAlso
-                            _inputPayload(_signalCandleTime).Open - _lastDayClose > 0 Then
-                            gapExists = True
-                        End If
-                    Else
-                        If _inputPayload(_signalCandleTime).PreviousCandlePayload.High - _lastDayClose < 0 AndAlso
-                            _inputPayload(_signalCandleTime).Open - _lastDayClose < 0 Then
-                            gapExists = True
+                    If Math.Abs(_gapPercentage) >= 0.5 Then
+                        If _gapPercentage >= 0 Then
+                            If _inputPayload(_signalCandleTime).PreviousCandlePayload.Low - _lastDayClose > 0 AndAlso
+                                _inputPayload(_signalCandleTime).Open - _lastDayClose > 0 Then
+                                gapExists = True
+                            End If
+                        Else
+                            If _inputPayload(_signalCandleTime).PreviousCandlePayload.High - _lastDayClose < 0 AndAlso
+                                _inputPayload(_signalCandleTime).Open - _lastDayClose < 0 Then
+                                gapExists = True
+                            End If
                         End If
                     End If
                 End If
