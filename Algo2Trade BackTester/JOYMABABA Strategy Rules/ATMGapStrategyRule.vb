@@ -41,15 +41,13 @@ Public Class ATMGapStrategyRule
     End Sub
 
     Public Overrides Sub CalculateRule(ByRef outputPayload As Dictionary(Of String, Object))
+        Throw New NotImplementedException()
+    End Sub
+    Public Overrides Async Function CalculateRuleAsync() As Task(Of Dictionary(Of String, Object))
+        Dim ret As Dictionary(Of String, Object) = Nothing
         If _timeframe > 1 Then Throw New ApplicationException(String.Format("Can not run this rule on {0} minute timeframe. Only 1 minute timeframe is allowed.", _timeframe))
         If _inputPayload IsNot Nothing AndAlso _inputPayload.Count > 0 Then
             Dim outputSignalPayload As Dictionary(Of Date, EntryDetails) = Nothing
-            'Dim outputEntryPayload As Dictionary(Of Date, Decimal) = Nothing
-            'Dim outputTargetPayload As Dictionary(Of Date, Decimal) = Nothing
-            'Dim outputStoplossPayload As Dictionary(Of Date, Decimal) = Nothing
-            'Dim outputQuantityPayload As Dictionary(Of Date, Integer) = Nothing
-            ''Dim outputModifyStoplossPayload As Dictionary(Of Date, ModifyStoploss) = Nothing
-            'Dim outputModifyTargetPayload As Dictionary(Of Date, Decimal) = Nothing
             Dim outputSupporting1Payload As Dictionary(Of Date, String) = Nothing
             Dim outputSupporting2Payload As Dictionary(Of Date, String) = Nothing
             Dim outputSupporting3Payload As Dictionary(Of Date, String) = Nothing
@@ -57,17 +55,21 @@ Public Class ATMGapStrategyRule
             Dim outputSupporting5Payload As Dictionary(Of Date, String) = Nothing
 
             If _inputPayload.LastOrDefault.Key.Date = _tradingDate.Date Then
+                Dim tradingSymbol As String = _inputPayload.LastOrDefault.Value.TradingSymbol
+                Dim rawInstrumentName As String = tradingSymbol.Remove(tradingSymbol.Count - 8)
+                Dim cashInstrumentPayload As Dictionary(Of Date, Payload) = Await _cmn.GetHistoricalData(Common.DataBaseTable.Intraday_Cash, rawInstrumentName, _tradingDate)
                 Dim gapExists As Boolean = False
-                If _inputPayload.ContainsKey(_signalCandleTime) AndAlso _inputPayload(_signalCandleTime).PreviousCandlePayload IsNot Nothing Then
+                If cashInstrumentPayload IsNot Nothing AndAlso cashInstrumentPayload.Count > 0 AndAlso
+                    cashInstrumentPayload.ContainsKey(_signalCandleTime) AndAlso cashInstrumentPayload(_signalCandleTime).PreviousCandlePayload IsNot Nothing Then
                     If Math.Abs(_gapPercentage) >= 0.5 Then
                         If _gapPercentage >= 0 Then
-                            If _inputPayload(_signalCandleTime).PreviousCandlePayload.Low - _lastDayClose > 0 AndAlso
-                                _inputPayload(_signalCandleTime).Open - _lastDayClose > 0 Then
+                            If cashInstrumentPayload(_signalCandleTime).PreviousCandlePayload.Low - _lastDayClose > 0 AndAlso
+                                cashInstrumentPayload(_signalCandleTime).Open - _lastDayClose > 0 Then
                                 gapExists = True
                             End If
                         Else
-                            If _inputPayload(_signalCandleTime).PreviousCandlePayload.High - _lastDayClose < 0 AndAlso
-                                _inputPayload(_signalCandleTime).Open - _lastDayClose < 0 Then
+                            If cashInstrumentPayload(_signalCandleTime).PreviousCandlePayload.High - _lastDayClose < 0 AndAlso
+                                cashInstrumentPayload(_signalCandleTime).Open - _lastDayClose < 0 Then
                                 gapExists = True
                             End If
                         End If
@@ -81,7 +83,6 @@ Public Class ATMGapStrategyRule
                     Dim potentialLowEntryPrice As Decimal = 0
                     Dim levelPrice As Decimal = 0
                     Dim signalCandle As Payload = Nothing
-                    Dim tradingSymbol As String = _inputPayload.LastOrDefault.Value.TradingSymbol
                     For Each runningPayload In _inputPayload.Keys
                         Dim entryData As New EntryDetails
                         With entryData
@@ -101,8 +102,8 @@ Public Class ATMGapStrategyRule
                         Dim supporting1 As String = Nothing
                         Dim supporting2 As String = Nothing
                         Dim supporting3 As String = Nothing
-                        'Dim supporting4 As String = Nothing
-                        'Dim supporting5 As String = Nothing
+                        Dim supporting4 As String = Nothing
+                        Dim supporting5 As String = Nothing
 
                         If runningPayload.Date = _tradingDate.Date Then
                             If ATRToBeUsed = ATRCandle.PreviousDayLastCandle AndAlso _usableATR = Decimal.MinValue Then
@@ -142,6 +143,8 @@ Public Class ATMGapStrategyRule
                                     supporting1 = signalCandle.PayloadDate.ToShortTimeString
                                     supporting2 = levelPrice
                                     supporting3 = _usableATR
+                                    supporting4 = _gapPercentage
+                                    supporting5 = _lastDayClose
 
                                     entryData.SellSignal = -1
                                     entryData.SellEntry = potentialLowEntryPrice
@@ -159,6 +162,8 @@ Public Class ATMGapStrategyRule
                                     supporting1 = signalCandle.PayloadDate.ToShortTimeString
                                     supporting2 = levelPrice
                                     supporting3 = _usableATR
+                                    supporting4 = _gapPercentage
+                                    supporting5 = _lastDayClose
                                 Else
                                     If _inputPayload(runningPayload).High >= potentialHighEntryPrice Then
                                         entryData.BuySignal = 1
@@ -177,6 +182,8 @@ Public Class ATMGapStrategyRule
                                         supporting1 = signalCandle.PayloadDate.ToShortTimeString
                                         supporting2 = levelPrice
                                         supporting3 = _usableATR
+                                        supporting4 = _gapPercentage
+                                        supporting5 = _lastDayClose
                                     End If
                                     If _inputPayload(runningPayload).Low <= potentialLowEntryPrice Then
                                         entryData.SellSignal = -1
@@ -195,6 +202,8 @@ Public Class ATMGapStrategyRule
                                         supporting1 = signalCandle.PayloadDate.ToShortTimeString
                                         supporting2 = levelPrice
                                         supporting3 = _usableATR
+                                        supporting4 = _gapPercentage
+                                        supporting5 = _lastDayClose
                                     End If
                                 End If
                             End If
@@ -203,49 +212,32 @@ Public Class ATMGapStrategyRule
                         If _inputPayload(runningPayload).PreviousCandlePayload IsNot Nothing Then
                             If outputSignalPayload Is Nothing Then outputSignalPayload = New Dictionary(Of Date, EntryDetails)
                             outputSignalPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, entryData)
-                            'If outputEntryPayload Is Nothing Then outputEntryPayload = New Dictionary(Of Date, Decimal)
-                            'outputEntryPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, entryPrice)
-                            'If outputTargetPayload Is Nothing Then outputTargetPayload = New Dictionary(Of Date, Decimal)
-                            'outputTargetPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, targetPrice)
-                            'If outputStoplossPayload Is Nothing Then outputStoplossPayload = New Dictionary(Of Date, Decimal)
-                            'outputStoplossPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, slPrice)
-                            'If outputQuantityPayload Is Nothing Then outputQuantityPayload = New Dictionary(Of Date, Integer)
-                            'outputQuantityPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, quantity)
 
-                            'If outputModifyStoplossPayload Is Nothing Then outputModifyStoplossPayload = New Dictionary(Of Date, ModifyStoploss)
-                            'outputModifyStoplossPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, modifySLPrice)
-                            'If outputModifyTargetPayload Is Nothing Then outputModifyTargetPayload = New Dictionary(Of Date, Decimal)
-                            'outputModifyTargetPayload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, modifyTargetPrice)
                             If outputSupporting1Payload Is Nothing Then outputSupporting1Payload = New Dictionary(Of Date, String)
                             outputSupporting1Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting1)
                             If outputSupporting2Payload Is Nothing Then outputSupporting2Payload = New Dictionary(Of Date, String)
                             outputSupporting2Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting2)
                             If outputSupporting3Payload Is Nothing Then outputSupporting3Payload = New Dictionary(Of Date, String)
                             outputSupporting3Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting3)
-                            'If outputSupporting4Payload Is Nothing Then outputSupporting4Payload = New Dictionary(Of Date, String)
-                            'outputSupporting4Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting4)
-                            'If outputSupporting5Payload Is Nothing Then outputSupporting5Payload = New Dictionary(Of Date, String)
-                            'outputSupporting5Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting5)
+                            If outputSupporting4Payload Is Nothing Then outputSupporting4Payload = New Dictionary(Of Date, String)
+                            outputSupporting4Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting4)
+                            If outputSupporting5Payload Is Nothing Then outputSupporting5Payload = New Dictionary(Of Date, String)
+                            outputSupporting5Payload.Add(_inputPayload(runningPayload).PreviousCandlePayload.PayloadDate, supporting5)
                         End If
                     Next
 
-                    If outputPayload Is Nothing Then outputPayload = New Dictionary(Of String, Object)
-                    If outputSignalPayload IsNot Nothing Then outputPayload.Add("Signal", outputSignalPayload)
-                    'If outputEntryPayload IsNot Nothing Then outputPayload.Add("Entry", outputEntryPayload)
-                    'If outputTargetPayload IsNot Nothing Then outputPayload.Add("Target", outputTargetPayload)
-                    'If outputStoplossPayload IsNot Nothing Then outputPayload.Add("Stoploss", outputStoplossPayload)
-                    'If outputQuantityPayload IsNot Nothing Then outputPayload.Add("Quantity", outputQuantityPayload)
-                    'If outputModifyStoplossPayload IsNot Nothing Then outputPayload.Add("ModifyStoploss", outputModifyStoplossPayload)
-                    'If outputModifyTargetPayload IsNot Nothing Then outputPayload.Add("ModifyTarget", outputModifyTargetPayload)
-                    If outputSupporting1Payload IsNot Nothing Then outputPayload.Add("Supporting1", outputSupporting1Payload)
-                    If outputSupporting2Payload IsNot Nothing Then outputPayload.Add("Supporting2", outputSupporting2Payload)
-                    If outputSupporting3Payload IsNot Nothing Then outputPayload.Add("Supporting3", outputSupporting3Payload)
-                    If outputSupporting4Payload IsNot Nothing Then outputPayload.Add("Supporting4", outputSupporting4Payload)
-                    If outputSupporting5Payload IsNot Nothing Then outputPayload.Add("Supporting5", outputSupporting5Payload)
+                    If ret Is Nothing Then ret = New Dictionary(Of String, Object)
+                    If outputSignalPayload IsNot Nothing Then ret.Add("Signal", outputSignalPayload)
+                    If outputSupporting1Payload IsNot Nothing Then ret.Add("Supporting1", outputSupporting1Payload)
+                    If outputSupporting2Payload IsNot Nothing Then ret.Add("Supporting2", outputSupporting2Payload)
+                    If outputSupporting3Payload IsNot Nothing Then ret.Add("Supporting3", outputSupporting3Payload)
+                    If outputSupporting4Payload IsNot Nothing Then ret.Add("Supporting4", outputSupporting4Payload)
+                    If outputSupporting5Payload IsNot Nothing Then ret.Add("Supporting5", outputSupporting5Payload)
                 End If
             End If
         End If
-    End Sub
+        Return ret
+    End Function
 
     Public Enum ATRCandle
         PreviousDayLastCandle
