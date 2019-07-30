@@ -591,6 +591,103 @@ Public Class GenericStrategy
                                                 If runningTrade IsNot Nothing Then PlaceOrModifyOrder(runningTrade, Nothing)
                                                 If runningTrade2 IsNot Nothing Then PlaceOrModifyOrder(runningTrade2, Nothing)
                                             End If
+                                        ElseIf currentMinuteCandlePayload IsNot Nothing AndAlso numberOfExecutedTradePerStockPerDay < NumberOfTradePerStockPerDay AndAlso
+                                           XDayRuleSignalStocksPayload.ContainsKey(stockName) AndAlso
+                                           XDayRuleSignalStocksPayload(stockName).ContainsKey(GetDateTimeTillMinutes(signalCandleTime)) AndAlso
+                                           XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).BuySignal = 1 Then
+                                            Dim lastTrade As Trade = GetLastExecutedTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
+                                            If Not IsTradeActive(currentMinuteCandlePayload, Trade.TradeType.MIS) AndAlso lastTrade IsNot Nothing AndAlso
+                                                lastTrade.SignalCandle.PayloadDate = currentMinuteCandlePayload.PayloadDate Then
+                                                finalEntryPrice = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).BuyEntry
+                                                entryBuffer = CalculateBuffer(finalEntryPrice, RoundOfType.Floor)
+
+                                                finalStoplossPrice = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).BuyStoploss
+                                                stoplossBuffer = CalculateBuffer(finalEntryPrice, RoundOfType.Floor)
+                                                finalStoplossRemark = String.Format("Stoploss: {0}", Math.Round(finalEntryPrice - finalStoplossPrice, 4))
+
+                                                'If TrailingSL Then
+                                                '    finalTargetPrice = finalEntryPrice + 100000
+                                                'Else
+                                                finalTargetPrice = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).BuyTarget
+                                                'End If
+                                                finalTargetRemark = String.Format("Target: {0}", Math.Round(finalTargetPrice - finalEntryPrice, 4))
+
+                                                squareOffValue = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).BuyTarget - finalEntryPrice
+                                                quantity = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).BuyQuantity
+
+                                                Dim tradeTag As String = System.Guid.NewGuid.ToString()
+
+                                                If PartialExit Then
+                                                    Dim modifiedQuantity As Integer = quantity / 2
+                                                    runningTrade = New Trade(Me,
+                                                             currentMinuteCandlePayload.TradingSymbol,
+                                                             _StockType,
+                                                             currentMinuteCandlePayload.PayloadDate,
+                                                             Trade.TradeExecutionDirection.Buy,
+                                                             finalEntryPrice,
+                                                             entryBuffer,
+                                                             Trade.TradeType.MIS,
+                                                             Trade.TradeEntryCondition.Original,
+                                                             "Signal Candle High Price",
+                                                             modifiedQuantity,
+                                                             lotSize,
+                                                             finalTargetPrice,
+                                                             finalTargetRemark,
+                                                             finalStoplossPrice,
+                                                             stoplossBuffer,
+                                                             finalStoplossRemark,
+                                                             currentMinuteCandlePayload)
+
+                                                    runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
+
+                                                    finalTargetPrice = finalEntryPrice + 100
+                                                    finalTargetRemark = String.Format("Target: 100")
+
+                                                    runningTrade2 = New Trade(Me,
+                                                             currentMinuteCandlePayload.TradingSymbol,
+                                                             _StockType,
+                                                             currentMinuteCandlePayload.PayloadDate,
+                                                             Trade.TradeExecutionDirection.Buy,
+                                                             finalEntryPrice,
+                                                             entryBuffer,
+                                                             Trade.TradeType.MIS,
+                                                             Trade.TradeEntryCondition.Original,
+                                                             "Signal Candle High Price",
+                                                             quantity - modifiedQuantity,
+                                                             lotSize,
+                                                             finalTargetPrice,
+                                                             finalTargetRemark,
+                                                             finalStoplossPrice,
+                                                             stoplossBuffer,
+                                                             finalStoplossRemark,
+                                                             currentMinuteCandlePayload)
+
+                                                    runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
+                                                Else
+                                                    runningTrade = New Trade(Me,
+                                                             currentMinuteCandlePayload.TradingSymbol,
+                                                             _StockType,
+                                                             currentMinuteCandlePayload.PayloadDate,
+                                                             Trade.TradeExecutionDirection.Buy,
+                                                             finalEntryPrice,
+                                                             entryBuffer,
+                                                             Trade.TradeType.MIS,
+                                                             Trade.TradeEntryCondition.Original,
+                                                             "Signal Candle High Price",
+                                                             quantity,
+                                                             lotSize,
+                                                             finalTargetPrice,
+                                                             finalTargetRemark,
+                                                             finalStoplossPrice,
+                                                             stoplossBuffer,
+                                                             finalStoplossRemark,
+                                                             currentMinuteCandlePayload)
+
+                                                    runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
+                                                End If
+                                                If runningTrade IsNot Nothing Then PlaceOrModifyOrder(runningTrade, Nothing)
+                                                If runningTrade2 IsNot Nothing Then PlaceOrModifyOrder(runningTrade2, Nothing)
+                                            End If
                                         End If
 
                                         If currentMinuteCandlePayload IsNot Nothing AndAlso numberOfExecutedTradePerStockPerDay < NumberOfTradePerStockPerDay AndAlso
@@ -715,6 +812,103 @@ Public Class GenericStrategy
                                                 '    If runningTrade IsNot Nothing Then PlaceOrModifyOrder(runningTrade, Nothing)
                                                 '    If runningTrade2 IsNot Nothing Then PlaceOrModifyOrder(runningTrade2, Nothing)
                                                 'End If
+                                                If runningTrade IsNot Nothing Then PlaceOrModifyOrder(runningTrade, Nothing)
+                                                If runningTrade2 IsNot Nothing Then PlaceOrModifyOrder(runningTrade2, Nothing)
+                                            End If
+                                        ElseIf currentMinuteCandlePayload IsNot Nothing AndAlso numberOfExecutedTradePerStockPerDay < NumberOfTradePerStockPerDay AndAlso
+                                            XDayRuleSignalStocksPayload.ContainsKey(stockName) AndAlso
+                                            XDayRuleSignalStocksPayload(stockName).ContainsKey(GetDateTimeTillMinutes(signalCandleTime)) AndAlso
+                                            XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).SellSignal = -1 Then
+                                            Dim lastTrade As Trade = GetLastExecutedTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
+                                            If Not IsTradeActive(currentMinuteCandlePayload, Trade.TradeType.MIS) AndAlso lastTrade IsNot Nothing AndAlso
+                                                lastTrade.SignalCandle.PayloadDate = currentMinuteCandlePayload.PayloadDate Then
+                                                finalEntryPrice = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).SellEntry
+                                                entryBuffer = CalculateBuffer(finalEntryPrice, RoundOfType.Floor)
+
+                                                finalStoplossPrice = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).SellStoploss
+                                                stoplossBuffer = CalculateBuffer(finalEntryPrice, RoundOfType.Floor)
+                                                finalStoplossRemark = String.Format("Stoploss: {0}", Math.Round(finalStoplossPrice - finalEntryPrice, 4))
+
+                                                'If TrailingSL Then
+                                                '    finalTargetPrice = finalEntryPrice - 100000
+                                                'Else
+                                                finalTargetPrice = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).SellTarget
+                                                'End If
+                                                finalTargetRemark = String.Format("Target: {0}", Math.Round(finalEntryPrice - finalTargetPrice, 4))
+
+                                                squareOffValue = finalEntryPrice - XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).SellTarget
+                                                quantity = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).SellQuantity
+
+                                                Dim tradeTag As String = System.Guid.NewGuid.ToString()
+
+                                                If PartialExit Then
+                                                    Dim modifiedQuantity As Integer = quantity / 2
+                                                    runningTrade = New Trade(Me,
+                                                                currentMinuteCandlePayload.TradingSymbol,
+                                                                _StockType,
+                                                                currentMinuteCandlePayload.PayloadDate,
+                                                                Trade.TradeExecutionDirection.Sell,
+                                                                finalEntryPrice,
+                                                                entryBuffer,
+                                                                Trade.TradeType.MIS,
+                                                                Trade.TradeEntryCondition.Original,
+                                                                "Signal Candle Low Price",
+                                                                modifiedQuantity,
+                                                                lotSize,
+                                                                finalTargetPrice,
+                                                                finalTargetRemark,
+                                                                finalStoplossPrice,
+                                                                stoplossBuffer,
+                                                                finalStoplossRemark,
+                                                                currentMinuteCandlePayload)
+
+                                                    runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
+
+                                                    finalTargetPrice = finalEntryPrice - 100
+                                                    finalTargetRemark = String.Format("Target: 100")
+
+                                                    runningTrade2 = New Trade(Me,
+                                                               currentMinuteCandlePayload.TradingSymbol,
+                                                               _StockType,
+                                                               currentMinuteCandlePayload.PayloadDate,
+                                                               Trade.TradeExecutionDirection.Sell,
+                                                               finalEntryPrice,
+                                                               entryBuffer,
+                                                               Trade.TradeType.MIS,
+                                                               Trade.TradeEntryCondition.Original,
+                                                               "Signal Candle Low Price",
+                                                               quantity - modifiedQuantity,
+                                                               lotSize,
+                                                               finalTargetPrice,
+                                                               finalTargetRemark,
+                                                               finalStoplossPrice,
+                                                               stoplossBuffer,
+                                                               finalStoplossRemark,
+                                                               currentMinuteCandlePayload)
+
+                                                    runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
+                                                Else
+                                                    runningTrade = New Trade(Me,
+                                                                currentMinuteCandlePayload.TradingSymbol,
+                                                                _StockType,
+                                                                currentMinuteCandlePayload.PayloadDate,
+                                                                Trade.TradeExecutionDirection.Sell,
+                                                                finalEntryPrice,
+                                                                entryBuffer,
+                                                                Trade.TradeType.MIS,
+                                                                Trade.TradeEntryCondition.Original,
+                                                                "Signal Candle Low Price",
+                                                                quantity,
+                                                                lotSize,
+                                                                finalTargetPrice,
+                                                                finalTargetRemark,
+                                                                finalStoplossPrice,
+                                                                stoplossBuffer,
+                                                                finalStoplossRemark,
+                                                                currentMinuteCandlePayload)
+
+                                                    runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
+                                                End If
                                                 If runningTrade IsNot Nothing Then PlaceOrModifyOrder(runningTrade, Nothing)
                                                 If runningTrade2 IsNot Nothing Then PlaceOrModifyOrder(runningTrade2, Nothing)
                                             End If
