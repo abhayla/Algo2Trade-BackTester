@@ -182,9 +182,14 @@ Public Class GenericStrategy
                             XDayOneMinutePayload = Data.PastIntradayData(tradeCheckingDate)(stock)
                         Else
                             If Me.DataSource = SourceOfData.Database Then
-                                XDayOneMinutePayload = _common.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                                Dim tradingSymbol As String = Nothing
+                                Dim symbolToken As Tuple(Of String, String) = _common.GetCurrentTradingSymbolWithInstrumentToken(_DatabaseTable, tradeCheckingDate, stock)
+                                If symbolToken IsNot Nothing Then tradingSymbol = symbolToken.Item2
+                                If tradingSymbol IsNot Nothing Then
+                                    XDayOneMinutePayload = _common.GetRawPayloadForSpecificTradingSymbol(_DatabaseTable, tradingSymbol, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                                End If
                             ElseIf Me.DataSource = SourceOfData.Live Then
-                                XDayOneMinutePayload = Await _common.GetHistoricalData(_DatabaseTable, stock, tradeCheckingDate).ConfigureAwait(False)
+                                    XDayOneMinutePayload = Await _common.GetHistoricalData(_DatabaseTable, stock, tradeCheckingDate).ConfigureAwait(False)
                             End If
                             'If XDayOneMinutePayload IsNot Nothing Then
                             '    If stockData Is Nothing Then stockData = New Dictionary(Of String, Dictionary(Of Date, Payload))
