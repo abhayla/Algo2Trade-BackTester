@@ -14,10 +14,7 @@ Public MustInherit Class StrategyRule
         _quantity = quantity
     End Sub
     Public MustOverride Sub CalculateRule(ByRef outputPayload As Dictionary(Of String, Object))
-    Public Overridable Async Function CalculateRuleAsync() As Task(Of Dictionary(Of String, Object))
-        Await Task.Delay(0).ConfigureAwait(False)
-        Return Nothing
-    End Function
+
     Protected Function CalculateBuffer(ByVal numberOfBufferTicks As Integer) As Double
         Dim bufferPrice As Double = Nothing
         'Assuming 1% target, we can afford to have buffer as 2.5% of that 1% target

@@ -259,8 +259,7 @@ Public Class GenericStrategy
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                         strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
                                         strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
-                                        'strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                        XDayRuleOutputPayload = Await strategyBaseRule.CalculateRuleAsync().ConfigureAwait(False)
+                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                         If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                     End Using
 

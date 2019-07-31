@@ -41,10 +41,6 @@ Public Class ATMGapStrategyRule
     End Sub
 
     Public Overrides Sub CalculateRule(ByRef outputPayload As Dictionary(Of String, Object))
-        Throw New NotImplementedException()
-    End Sub
-    Public Overrides Async Function CalculateRuleAsync() As Task(Of Dictionary(Of String, Object))
-        Dim ret As Dictionary(Of String, Object) = Nothing
         If _timeframe > 1 Then Throw New ApplicationException(String.Format("Can not run this rule on {0} minute timeframe. Only 1 minute timeframe is allowed.", _timeframe))
         If _inputPayload IsNot Nothing AndAlso _inputPayload.Count > 0 Then
             Dim outputSignalPayload As Dictionary(Of Date, EntryDetails) = Nothing
@@ -57,7 +53,7 @@ Public Class ATMGapStrategyRule
             If _inputPayload.LastOrDefault.Key.Date = _tradingDate.Date Then
                 Dim tradingSymbol As String = _inputPayload.LastOrDefault.Value.TradingSymbol
                 Dim rawInstrumentName As String = tradingSymbol.Remove(tradingSymbol.Count - 8)
-                Dim cashInstrumentPayload As Dictionary(Of Date, Payload) = Await _cmn.GetHistoricalData(Common.DataBaseTable.Intraday_Cash, rawInstrumentName, _tradingDate)
+                Dim cashInstrumentPayload As Dictionary(Of Date, Payload) = _cmn.GetRawPayloadForSpecificTradingSymbol(Common.DataBaseTable.Intraday_Cash, rawInstrumentName, _tradingDate, _tradingDate)
                 Dim gapExists As Boolean = False
                 If cashInstrumentPayload IsNot Nothing AndAlso cashInstrumentPayload.Count > 0 AndAlso
                     cashInstrumentPayload.ContainsKey(_signalCandleTime) AndAlso cashInstrumentPayload(_signalCandleTime).PreviousCandlePayload IsNot Nothing Then
@@ -226,18 +222,17 @@ Public Class ATMGapStrategyRule
                         End If
                     Next
 
-                    If ret Is Nothing Then ret = New Dictionary(Of String, Object)
-                    If outputSignalPayload IsNot Nothing Then ret.Add("Signal", outputSignalPayload)
-                    If outputSupporting1Payload IsNot Nothing Then ret.Add("Supporting1", outputSupporting1Payload)
-                    If outputSupporting2Payload IsNot Nothing Then ret.Add("Supporting2", outputSupporting2Payload)
-                    If outputSupporting3Payload IsNot Nothing Then ret.Add("Supporting3", outputSupporting3Payload)
-                    If outputSupporting4Payload IsNot Nothing Then ret.Add("Supporting4", outputSupporting4Payload)
-                    If outputSupporting5Payload IsNot Nothing Then ret.Add("Supporting5", outputSupporting5Payload)
+                    If outputPayload Is Nothing Then outputPayload = New Dictionary(Of String, Object)
+                    If outputSignalPayload IsNot Nothing Then outputPayload.Add("Signal", outputSignalPayload)
+                    If outputSupporting1Payload IsNot Nothing Then outputPayload.Add("Supporting1", outputSupporting1Payload)
+                    If outputSupporting2Payload IsNot Nothing Then outputPayload.Add("Supporting2", outputSupporting2Payload)
+                    If outputSupporting3Payload IsNot Nothing Then outputPayload.Add("Supporting3", outputSupporting3Payload)
+                    If outputSupporting4Payload IsNot Nothing Then outputPayload.Add("Supporting4", outputSupporting4Payload)
+                    If outputSupporting5Payload IsNot Nothing Then outputPayload.Add("Supporting5", outputSupporting5Payload)
                 End If
             End If
         End If
-        Return ret
-    End Function
+    End Sub
 
     Public Enum ATRCandle
         PreviousDayLastCandle
