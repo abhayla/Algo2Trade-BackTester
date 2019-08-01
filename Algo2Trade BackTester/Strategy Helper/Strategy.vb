@@ -829,6 +829,12 @@ Public MustInherit Class Strategy
                                  TradeCurrentStatus:=Trade.TradeExecutionStatus.Cancel)
 
         InsertCapitalRequired(currentTrade.ExitTime, 0, currentTrade.CapitalRequiredWithMargin, "Cancel Trade")
+
+        Try
+            TradesTaken(currentTrade.TradingDate.Date)(currentTrade.TradingSymbol).Remove(currentTrade)
+        Catch ex As Exception
+            Throw ex
+        End Try
         'Console.WriteLine(currentTrade.ToString)
     End Sub
     Public Function ExitTradeIfPossible(ByVal currentTrade As Trade, ByVal currentPayload As Payload, Optional ByVal forwardPayloads As List(Of Tuple(Of Payload, Boolean)) = Nothing) As Tuple(Of Boolean, Date)
