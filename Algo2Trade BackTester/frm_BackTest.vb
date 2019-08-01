@@ -274,8 +274,8 @@ Public Class frm_BackTest
                                                 .AmountToBeWithdrawn = 100000
 
                                                 '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
-                                                .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Pre Market Future Stock List Gap Based.csv")
-                                                '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "BANKNIFTY Stock List.csv")
+                                                '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Pre Market Future Stock List Gap Based.csv")
+                                                .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "BANKNIFTY Stock List.csv")
 
                                                 '1 from investment, 2 from SL, 3 from futures lot
                                                 .QuantityFlag = 3

@@ -202,6 +202,15 @@ Public Class ATMGapStrategyRule
                                         supporting5 = _lastDayClose
                                     End If
                                 End If
+                                If _firstEntryQuantity <> 0 Then
+                                    Dim potentialLoss As Decimal = Strategy.CalculatePL(tradingSymbol, potentialHighEntryPrice, levelPrice, _firstEntryQuantity, _quantity, Trade.TypeOfStock.Futures)
+                                    Dim potentailCapital As Decimal = potentialHighEntryPrice * _firstEntryQuantity / Strategy.MarginMultiplier
+
+                                    If (Math.Abs(potentialLoss) * 100 / potentailCapital) > 20 Then
+                                        outputPayload = Nothing
+                                        Exit Sub
+                                    End If
+                                End If
                             End If
                         End If
 

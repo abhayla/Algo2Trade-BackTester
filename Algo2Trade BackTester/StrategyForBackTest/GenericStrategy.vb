@@ -259,13 +259,17 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.ATRMultiplier = 1
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
-                                    Using strategyBaseRule As New ATMGapStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType, stockList(stock)(2), stockList(stock)(3))
-                                        strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
+                                    'Using strategyBaseRule As New ATMGapStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType, stockList(stock)(2), stockList(stock)(3))
+                                    '    strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
+                                    '    strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    '    If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
+                                    'End Using
+                                    Using strategyBaseRule As New BankNiftyStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
-                                        strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
-                                        strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                        If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                     End Using
 
                                 End If
@@ -442,16 +446,16 @@ Public Class GenericStrategy
                                     Dim lotSize As Integer = stockList(stockName)(1)
                                     Dim entryBuffer As Decimal = Nothing
                                     Dim stoplossBuffer As Decimal = Nothing
-                                    Dim supporting1 As String = If(XDayRuleSupporting1StocksPayload IsNot Nothing AndAlso XDayRuleSupporting1StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting1StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting1StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting1StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting2 As String = If(XDayRuleSupporting2StocksPayload IsNot Nothing AndAlso XDayRuleSupporting2StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting2StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting2StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting2StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting3 As String = If(XDayRuleSupporting3StocksPayload IsNot Nothing AndAlso XDayRuleSupporting3StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting3StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting3StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting3StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting4 As String = If(XDayRuleSupporting4StocksPayload IsNot Nothing AndAlso XDayRuleSupporting4StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting4StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting4StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting4StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting5 As String = If(XDayRuleSupporting5StocksPayload IsNot Nothing AndAlso XDayRuleSupporting5StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting5StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting5StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting5StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting6 As String = If(XDayRuleSupporting6StocksPayload IsNot Nothing AndAlso XDayRuleSupporting6StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting6StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting6StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting6StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting7 As String = If(XDayRuleSupporting7StocksPayload IsNot Nothing AndAlso XDayRuleSupporting7StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting7StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting7StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting7StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting8 As String = If(XDayRuleSupporting8StocksPayload IsNot Nothing AndAlso XDayRuleSupporting8StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting8StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting8StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting8StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting9 As String = If(XDayRuleSupporting9StocksPayload IsNot Nothing AndAlso XDayRuleSupporting9StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting9StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting9StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting9StocksPayload(stockName)(signalCandleTime), "")
-                                    Dim supporting10 As String = If(XDayRuleSupporting10StocksPayload IsNot Nothing AndAlso XDayRuleSupporting10StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting10StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting10StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting10StocksPayload(stockName)(signalCandleTime), "")
+                                    Dim supporting1 As String = If(XDayRuleSupporting1StocksPayload IsNot Nothing AndAlso XDayRuleSupporting1StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting1StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting1StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting1StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting2 As String = If(XDayRuleSupporting2StocksPayload IsNot Nothing AndAlso XDayRuleSupporting2StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting2StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting2StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting2StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting3 As String = If(XDayRuleSupporting3StocksPayload IsNot Nothing AndAlso XDayRuleSupporting3StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting3StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting3StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting3StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting4 As String = If(XDayRuleSupporting4StocksPayload IsNot Nothing AndAlso XDayRuleSupporting4StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting4StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting4StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting4StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting5 As String = If(XDayRuleSupporting5StocksPayload IsNot Nothing AndAlso XDayRuleSupporting5StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting5StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting5StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting5StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting6 As String = If(XDayRuleSupporting6StocksPayload IsNot Nothing AndAlso XDayRuleSupporting6StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting6StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting6StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting6StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting7 As String = If(XDayRuleSupporting7StocksPayload IsNot Nothing AndAlso XDayRuleSupporting7StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting7StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting7StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting7StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting8 As String = If(XDayRuleSupporting8StocksPayload IsNot Nothing AndAlso XDayRuleSupporting8StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting8StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting8StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting8StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting9 As String = If(XDayRuleSupporting9StocksPayload IsNot Nothing AndAlso XDayRuleSupporting9StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting9StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting9StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting9StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
+                                    Dim supporting10 As String = If(XDayRuleSupporting10StocksPayload IsNot Nothing AndAlso XDayRuleSupporting10StocksPayload.ContainsKey(stockName) AndAlso XDayRuleSupporting10StocksPayload(stockName) IsNot Nothing AndAlso XDayRuleSupporting10StocksPayload(stockName).ContainsKey(signalCandleTime), XDayRuleSupporting10StocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)), "")
 
                                     Dim tradeActive As Boolean = False
                                     Dim numberOfExecutedTradePerDay As Integer = 0
@@ -1150,12 +1154,7 @@ Public Class GenericStrategy
                                             If potentialExitTrades IsNot Nothing AndAlso potentialExitTrades.Count > 0 Then
                                                 Dim orderExited As Boolean = False
                                                 For Each potentialExitTrade In potentialExitTrades
-                                                    Dim exitOrderResponse As Tuple(Of Boolean, Date) = Nothing
-                                                    Try
-                                                        exitOrderResponse = ExitTradeIfPossible(potentialExitTrade, tick, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
-                                                    Catch ex As Exception
-                                                        Throw ex
-                                                    End Try
+                                                    Dim exitOrderResponse As Tuple(Of Boolean, Date) = ExitTradeIfPossible(potentialExitTrade, tick, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
                                                     If exitOrderResponse IsNot Nothing AndAlso exitOrderResponse.Item1 Then
                                                         If timeChart Is Nothing Then timeChart = New Dictionary(Of String, Date)
                                                         timeChart(stockName) = exitOrderResponse.Item2

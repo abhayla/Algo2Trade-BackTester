@@ -117,6 +117,7 @@
     <Compile Include="JOYMABABA Strategy Rules\ATRBandHedging.vb" />
     <Compile Include="JOYMABABA Strategy Rules\ATRBasedCandleRangeStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\ATRBandBasedCandleRangeStrategyRule.vb" />
+    <Compile Include="JOYMABABA Strategy Rules\BankNiftyStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\CrudeoilCandleRangeBreakoutStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\DoubleVolumeATM.vb" />
     <Compile Include="JOYMABABA Strategy Rules\EMACrossoverStrategyRule.vb" />
