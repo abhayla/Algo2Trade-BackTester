@@ -8,7 +8,7 @@ Public Class BankNiftyStrategyRule
 
     Public CapitalToBeUsed As Decimal = 20000
 
-    Private ReadOnly _targetPercentage As Decimal = 0.2
+    Private ReadOnly _targetPercentage As Decimal = 0.18
     Private ReadOnly _stoplossPercentage As Decimal = 0.08
     Private ReadOnly _buffer As Decimal = 2
     Private ReadOnly _cmn As Common = Nothing
