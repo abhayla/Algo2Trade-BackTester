@@ -9,5 +9,5 @@
     Public SellTarget As Decimal
     Public SellStoploss As Decimal
     Public SellQuantity As Integer
-    Public FirstSignal As Integer
+    Public FirstSignal As Integer = 0
 End Class

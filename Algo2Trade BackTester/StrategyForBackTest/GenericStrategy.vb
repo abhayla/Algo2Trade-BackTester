@@ -25,6 +25,7 @@ Public Class GenericStrategy
     Public Property SameDirectionTrade As Boolean = False
     Public Property StopAtTargetReach As Boolean = False
     Public Property EntryAtOneMinuteCandleOpen As Boolean = False
+    Public Property EntryAccordingToSequence As Boolean = False
     Public Property NIFTY50Stocks As String()
 
     'For ATR Based Candle Range Strategy
@@ -485,6 +486,12 @@ Public Class GenericStrategy
                                             'Else
                                             '    tradeActive = IsTradeActive(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                             'End If
+                                            Dim firstSignal As Trade.TradeExecutionDirection = Trade.TradeExecutionDirection.None
+                                            If XDayRuleSignalStocksPayload(stockName)(signalCandleTime).FirstSignal = 1 Then
+                                                firstSignal = Trade.TradeExecutionDirection.Buy
+                                            ElseIf XDayRuleSignalStocksPayload(stockName)(signalCandleTime).FirstSignal = -1 Then
+                                                firstSignal = Trade.TradeExecutionDirection.Sell
+                                            End If
 
                                             If Not tradeActive Then
                                                 finalEntryPrice = XDayRuleSignalStocksPayload(stockName)(signalCandleTime).BuyEntry
@@ -525,7 +532,8 @@ Public Class GenericStrategy
                                                              finalStoplossPrice,
                                                              stoplossBuffer,
                                                              finalStoplossRemark,
-                                                             currentMinuteCandlePayload)
+                                                             currentMinuteCandlePayload,
+                                                             firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
 
@@ -549,7 +557,8 @@ Public Class GenericStrategy
                                                              finalStoplossPrice,
                                                              stoplossBuffer,
                                                              finalStoplossRemark,
-                                                             currentMinuteCandlePayload)
+                                                             currentMinuteCandlePayload,
+                                                             firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
                                                 Else
@@ -570,7 +579,8 @@ Public Class GenericStrategy
                                                              finalStoplossPrice,
                                                              stoplossBuffer,
                                                              finalStoplossRemark,
-                                                             currentMinuteCandlePayload)
+                                                             currentMinuteCandlePayload,
+                                                             firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
                                                 End If
@@ -607,6 +617,12 @@ Public Class GenericStrategy
                                             Dim lastTrade As Trade = GetLastExecutedTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                             If Not IsTradeActive(currentMinuteCandlePayload, Trade.TradeType.MIS) AndAlso lastTrade IsNot Nothing AndAlso
                                                 lastTrade.SignalCandle.PayloadDate = currentMinuteCandlePayload.PayloadDate Then
+                                                Dim firstSignal As Trade.TradeExecutionDirection = Trade.TradeExecutionDirection.None
+                                                If XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).FirstSignal = 1 Then
+                                                    firstSignal = Trade.TradeExecutionDirection.Buy
+                                                ElseIf XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).FirstSignal = -1 Then
+                                                    firstSignal = Trade.TradeExecutionDirection.Sell
+                                                End If
                                                 finalEntryPrice = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).BuyEntry
                                                 entryBuffer = CalculateBuffer(finalEntryPrice, RoundOfType.Floor)
 
@@ -645,7 +661,8 @@ Public Class GenericStrategy
                                                              finalStoplossPrice,
                                                              stoplossBuffer,
                                                              finalStoplossRemark,
-                                                             currentMinuteCandlePayload)
+                                                             currentMinuteCandlePayload,
+                                                             firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
 
@@ -669,7 +686,8 @@ Public Class GenericStrategy
                                                              finalStoplossPrice,
                                                              stoplossBuffer,
                                                              finalStoplossRemark,
-                                                             currentMinuteCandlePayload)
+                                                             currentMinuteCandlePayload,
+                                                             firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
                                                 Else
@@ -690,7 +708,8 @@ Public Class GenericStrategy
                                                              finalStoplossPrice,
                                                              stoplossBuffer,
                                                              finalStoplossRemark,
-                                                             currentMinuteCandlePayload)
+                                                             currentMinuteCandlePayload,
+                                                             firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
                                                 End If
@@ -709,6 +728,12 @@ Public Class GenericStrategy
                                             'Else
                                             '    tradeActive = IsTradeActive(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                             'End If
+                                            Dim firstSignal As Trade.TradeExecutionDirection = Trade.TradeExecutionDirection.None
+                                            If XDayRuleSignalStocksPayload(stockName)(signalCandleTime).FirstSignal = 1 Then
+                                                firstSignal = Trade.TradeExecutionDirection.Buy
+                                            ElseIf XDayRuleSignalStocksPayload(stockName)(signalCandleTime).FirstSignal = -1 Then
+                                                firstSignal = Trade.TradeExecutionDirection.Sell
+                                            End If
 
                                             If Not tradeActive Then
                                                 finalEntryPrice = XDayRuleSignalStocksPayload(stockName)(signalCandleTime).SellEntry
@@ -749,7 +774,8 @@ Public Class GenericStrategy
                                                                 finalStoplossPrice,
                                                                 stoplossBuffer,
                                                                 finalStoplossRemark,
-                                                                currentMinuteCandlePayload)
+                                                                currentMinuteCandlePayload,
+                                                                firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
 
@@ -773,7 +799,8 @@ Public Class GenericStrategy
                                                                finalStoplossPrice,
                                                                stoplossBuffer,
                                                                finalStoplossRemark,
-                                                               currentMinuteCandlePayload)
+                                                               currentMinuteCandlePayload,
+                                                               firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
                                                 Else
@@ -794,7 +821,8 @@ Public Class GenericStrategy
                                                                 finalStoplossPrice,
                                                                 stoplossBuffer,
                                                                 finalStoplossRemark,
-                                                                currentMinuteCandlePayload)
+                                                                currentMinuteCandlePayload,
+                                                                firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
                                                 End If
@@ -831,6 +859,13 @@ Public Class GenericStrategy
                                             Dim lastTrade As Trade = GetLastExecutedTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                             If Not IsTradeActive(currentMinuteCandlePayload, Trade.TradeType.MIS) AndAlso lastTrade IsNot Nothing AndAlso
                                                 lastTrade.SignalCandle.PayloadDate = currentMinuteCandlePayload.PayloadDate Then
+                                                Dim firstSignal As Trade.TradeExecutionDirection = Trade.TradeExecutionDirection.None
+                                                If XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).FirstSignal = 1 Then
+                                                    firstSignal = Trade.TradeExecutionDirection.Buy
+                                                ElseIf XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).FirstSignal = -1 Then
+                                                    firstSignal = Trade.TradeExecutionDirection.Sell
+                                                End If
+
                                                 finalEntryPrice = XDayRuleSignalStocksPayload(stockName)(GetDateTimeTillMinutes(signalCandleTime)).SellEntry
                                                 entryBuffer = CalculateBuffer(finalEntryPrice, RoundOfType.Floor)
 
@@ -869,7 +904,8 @@ Public Class GenericStrategy
                                                                 finalStoplossPrice,
                                                                 stoplossBuffer,
                                                                 finalStoplossRemark,
-                                                                currentMinuteCandlePayload)
+                                                                currentMinuteCandlePayload,
+                                                                firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
 
@@ -893,7 +929,8 @@ Public Class GenericStrategy
                                                                finalStoplossPrice,
                                                                stoplossBuffer,
                                                                finalStoplossRemark,
-                                                               currentMinuteCandlePayload)
+                                                               currentMinuteCandlePayload,
+                                                               firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
                                                 Else
@@ -914,7 +951,8 @@ Public Class GenericStrategy
                                                                 finalStoplossPrice,
                                                                 stoplossBuffer,
                                                                 finalStoplossRemark,
-                                                                currentMinuteCandlePayload)
+                                                                currentMinuteCandlePayload,
+                                                                firstSignal)
 
                                                     runningTrade.UpdateTrade(Tag:=tradeTag, SquareOffValue:=squareOffValue, Supporting1:=supporting1, Supporting2:=supporting2, Supporting3:=supporting3, Supporting4:=supporting4, Supporting5:=supporting5)
                                                 End If
@@ -969,9 +1007,12 @@ Public Class GenericStrategy
                                             If potentialEntryTrades IsNot Nothing AndAlso potentialEntryTrades.Count > 0 Then
                                                 Dim orderEnterd As Boolean = False
                                                 For Each potentialEntryTrade In potentialEntryTrades
-                                                    'If tick.Open <> potentialEntryTrade.EntryPrice Then
-                                                    '    Continue For
-                                                    'End If
+                                                    Dim lastTrade As Trade = GetLastExecutedTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
+                                                    If lastTrade Is Nothing AndAlso EntryAccordingToSequence AndAlso
+                                                        potentialEntryTrade.FirstEntryDirection <> Trade.TradeExecutionDirection.None AndAlso
+                                                        potentialEntryTrade.EntryDirection <> potentialEntryTrade.FirstEntryDirection Then
+                                                        Continue For
+                                                    End If
                                                     If Not CountTradesWithBreakevenMovement Then
                                                         numberOfExecutedTradePerDay = NumberOfTradesPerDayWithoutBreakevenExit(currentMinuteCandlePayload.PayloadDate)
                                                         numberOfExecutedTradePerStockPerDay = NumberOfTradesPerStockPerDayWithoutBreakevenExit(currentMinuteCandlePayload.PayloadDate, currentMinuteCandlePayload.TradingSymbol)
@@ -991,7 +1032,6 @@ Public Class GenericStrategy
                                                                     CancelTrade(potentialEntryTrade, currentMinuteCandlePayload, "Previous Trade Target reached")
                                                                 Else
                                                                     If SameDirectionTrade Then
-                                                                        Dim lastTrade As Trade = GetLastExecutedTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                                                         If lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
                                                                             lastTrade.PLPoint > 0 AndAlso lastTrade.EntryDirection = potentialEntryTrade.EntryDirection Then
                                                                             Dim exitMinuteBlock As Date = New Date(lastTrade.ExitTime.Year,
@@ -1037,7 +1077,6 @@ Public Class GenericStrategy
                                                                             End If
                                                                         End If
                                                                     Else
-                                                                        Dim lastTrade As Trade = GetLastExecutedTradeOfTheStock(currentMinuteCandlePayload, Trade.TradeType.MIS)
                                                                         'If lastTrade Is Nothing OrElse
                                                                         '    (lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
                                                                         '    lastTrade.PLPoint > 0 AndAlso lastTrade.EntryDirection <> potentialEntryTrade.EntryDirection) OrElse

@@ -280,11 +280,12 @@ Public Class frm_BackTest
                                                 '1 from investment, 2 from SL, 3 from futures lot
                                                 .QuantityFlag = 3
                                                 .MaxStoplossAmount = 1000
-                                                .TradeTargetMultiplier = targetMultiplier
-                                                .TradeStoplossMultiplier = 1
                                                 .EarlyStoploss = False
                                                 .CapitalToBeUsed = 20000
                                                 .CandleBasedEntry = True
+
+                                                .TradeTargetMultiplier = targetMultiplier
+                                                .TradeStoplossMultiplier = 1
 
                                                 Select Case strategyStockType
                                                     Case Trade.TypeOfStock.Cash
@@ -307,6 +308,7 @@ Public Class frm_BackTest
                                                 .ModifyStoploss = False
                                                 .StopAtTargetReach = True
                                                 .EntryAtOneMinuteCandleOpen = False
+                                                .EntryAccordingToSequence = True
                                                 .ExitOnStockFixedTargetStoploss = False
                                                 .StockMaxProfitPerDay = Decimal.MaxValue
                                                 .StockMaxLossPerDay = Decimal.MinValue

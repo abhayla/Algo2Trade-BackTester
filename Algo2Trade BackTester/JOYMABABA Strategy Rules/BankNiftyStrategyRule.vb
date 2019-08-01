@@ -49,6 +49,7 @@ Public Class BankNiftyStrategyRule
                 Dim potentialHighEntryPrice As Decimal = 0
                 Dim potentialLowEntryPrice As Decimal = 0
                 Dim levelPrice As Decimal = 0
+                Dim firstSignal As Integer = 0
                 Dim signalCandle As Payload = Nothing
                 For Each runningPayload In _inputPayload.Keys
                     Dim entryData As New EntryDetails
@@ -63,6 +64,7 @@ Public Class BankNiftyStrategyRule
                         .SellStoploss = 0
                         .SellTarget = 0
                         .SellQuantity = _quantity
+                        .FirstSignal = firstSignal
                     End With
                     'Dim modifySLPrice As ModifyStoploss = Nothing
                     'Dim modifyTargetPrice As Decimal = 0
@@ -87,27 +89,99 @@ Public Class BankNiftyStrategyRule
                                         Dim slPoint As Decimal = ConvertFloorCeling(potentialLowEntryPrice * _stoplossPercentage / 100, _tickSize, RoundOfType.Celing)
                                         levelPrice = potentialLowEntryPrice + slPoint
                                         potentialHighEntryPrice = levelPrice + slPoint
+
+                                        entryData.SellSignal = -1
+                                        entryData.SellEntry = potentialLowEntryPrice
+                                        entryData.SellStoploss = levelPrice
+                                        entryData.SellTarget = entryData.SellEntry - ConvertFloorCeling(entryData.SellEntry * _targetPercentage / 100, _tickSize, RoundOfType.Celing)
+                                        If _firstEntryQuantity = 0 Then
+                                            Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
+                                            If capitalRequired < CapitalToBeUsed Then
+                                                entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                            End If
+                                            _firstEntryQuantity = entryData.SellQuantity
+                                        Else
+                                            entryData.SellQuantity = _firstEntryQuantity
+                                        End If
+                                        entryData.FirstSignal = -1
+                                        firstSignal = -1
+                                        supporting1 = signalCandle.PayloadDate.ToShortTimeString
+                                        supporting2 = levelPrice
                                     ElseIf _inputPayload(runningPayload).CandleColor = Color.Red Then
                                         potentialHighEntryPrice = signalCandle.High + _buffer
                                         Dim slPoint As Decimal = ConvertFloorCeling(potentialHighEntryPrice * _stoplossPercentage / 100, _tickSize, RoundOfType.Celing)
                                         levelPrice = potentialHighEntryPrice - slPoint
                                         potentialLowEntryPrice = levelPrice - slPoint
+
+                                        entryData.BuySignal = 1
+                                        entryData.BuyEntry = potentialHighEntryPrice
+                                        entryData.BuyStoploss = levelPrice
+                                        entryData.BuyTarget = entryData.BuyEntry + ConvertFloorCeling(entryData.BuyEntry * _targetPercentage / 100, _tickSize, RoundOfType.Celing)
+                                        If _firstEntryQuantity = 0 Then
+                                            Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
+                                            If capitalRequired < CapitalToBeUsed Then
+                                                entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                                _firstEntryQuantity = entryData.BuyQuantity
+                                            End If
+                                        Else
+                                            entryData.BuyQuantity = _firstEntryQuantity
+                                        End If
+                                        entryData.FirstSignal = 1
+                                        firstSignal = 1
+                                        supporting1 = signalCandle.PayloadDate.ToShortTimeString
+                                        supporting2 = levelPrice
                                     End If
                                 ElseIf _inputPayload(runningPayload).High >= signalCandle.High + _buffer Then
                                     potentialHighEntryPrice = signalCandle.High + _buffer
                                     Dim slPoint As Decimal = ConvertFloorCeling(potentialHighEntryPrice * _stoplossPercentage / 100, _tickSize, RoundOfType.Celing)
                                     levelPrice = potentialHighEntryPrice - slPoint
                                     potentialLowEntryPrice = levelPrice - slPoint
+
+                                    entryData.BuySignal = 1
+                                    entryData.BuyEntry = potentialHighEntryPrice
+                                    entryData.BuyStoploss = levelPrice
+                                    entryData.BuyTarget = entryData.BuyEntry + ConvertFloorCeling(entryData.BuyEntry * _targetPercentage / 100, _tickSize, RoundOfType.Celing)
+                                    If _firstEntryQuantity = 0 Then
+                                        Dim capitalRequired As Decimal = entryData.BuyEntry * entryData.BuyQuantity / Strategy.MarginMultiplier
+                                        If capitalRequired < CapitalToBeUsed Then
+                                            entryData.BuyQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                            _firstEntryQuantity = entryData.BuyQuantity
+                                        End If
+                                    Else
+                                        entryData.BuyQuantity = _firstEntryQuantity
+                                    End If
+                                    entryData.FirstSignal = 1
+                                    firstSignal = 1
+                                    supporting1 = signalCandle.PayloadDate.ToShortTimeString
+                                    supporting2 = levelPrice
                                 ElseIf _inputPayload(runningPayload).Low <= signalCandle.Low - _buffer Then
                                     potentialLowEntryPrice = signalCandle.Low - _buffer
                                     Dim slPoint As Decimal = ConvertFloorCeling(potentialLowEntryPrice * _stoplossPercentage / 100, _tickSize, RoundOfType.Celing)
                                     levelPrice = potentialLowEntryPrice + slPoint
                                     potentialHighEntryPrice = levelPrice + slPoint
+
+                                    entryData.SellSignal = -1
+                                    entryData.SellEntry = potentialLowEntryPrice
+                                    entryData.SellStoploss = levelPrice
+                                    entryData.SellTarget = entryData.SellEntry - ConvertFloorCeling(entryData.SellEntry * _targetPercentage / 100, _tickSize, RoundOfType.Celing)
+                                    If _firstEntryQuantity = 0 Then
+                                        Dim capitalRequired As Decimal = entryData.SellEntry * entryData.SellQuantity / Strategy.MarginMultiplier
+                                        If capitalRequired < CapitalToBeUsed Then
+                                            entryData.SellQuantity = Math.Ceiling(CapitalToBeUsed / capitalRequired) * _quantity
+                                        End If
+                                        _firstEntryQuantity = entryData.SellQuantity
+                                    Else
+                                        entryData.SellQuantity = _firstEntryQuantity
+                                    End If
+                                    entryData.FirstSignal = -1
+                                    firstSignal = -1
+                                    supporting1 = signalCandle.PayloadDate.ToShortTimeString
+                                    supporting2 = levelPrice
                                 End If
                             End If
                         End If
                         If potentialHighEntryPrice <> 0 AndAlso potentialLowEntryPrice <> 0 AndAlso levelPrice <> 0 Then
-                            If _inputPayload(runningPayload).High >= potentialHighEntryPrice Then
+                            If entryData.BuySignal = 0 AndAlso _inputPayload(runningPayload).High >= potentialHighEntryPrice Then
                                 entryData.BuySignal = 1
                                 entryData.BuyEntry = potentialHighEntryPrice
                                 entryData.BuyStoploss = levelPrice
@@ -124,7 +198,7 @@ Public Class BankNiftyStrategyRule
                                 supporting1 = signalCandle.PayloadDate.ToShortTimeString
                                 supporting2 = levelPrice
                             End If
-                            If _inputPayload(runningPayload).Low <= potentialLowEntryPrice Then
+                            If entryData.SellSignal = 0 AndAlso _inputPayload(runningPayload).Low <= potentialLowEntryPrice Then
                                 entryData.SellSignal = -1
                                 entryData.SellEntry = potentialLowEntryPrice
                                 entryData.SellStoploss = levelPrice

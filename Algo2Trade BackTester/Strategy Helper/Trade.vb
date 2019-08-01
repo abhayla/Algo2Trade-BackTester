@@ -133,6 +133,53 @@ Public Class Trade
         Me._ExitCondition = TradeExitCondition.None
         Me._ExitRemark = Nothing
     End Sub
+    Public Sub New(ByVal originatingStrategy As Strategy,
+                    ByVal tradingSymbol As String,
+                    ByVal stockType As TypeOfStock,
+                    ByVal tradingDate As Date,
+                    ByVal entryDirection As TradeExecutionDirection,
+                    ByVal entryPrice As Double,
+                    ByVal entryBuffer As Decimal,
+                    ByVal squareOffType As TradeType,
+                    ByVal entryCondition As TradeEntryCondition,
+                    ByVal entryRemark As String,
+                    ByVal quantity As Integer,
+                    ByVal lotSize As Integer,
+                    ByVal potentialTarget As Double,
+                    ByVal targetRemark As String,
+                    ByVal potentialStopLoss As Double,
+                    ByVal stoplossBuffer As Decimal,
+                    ByVal slRemark As String,
+                    ByVal signalCandle As Payload,
+                    ByVal firstEntryDirection As TradeExecutionDirection)
+        Me._OriginatingStrategy = originatingStrategy
+        Me._TradingSymbol = tradingSymbol
+        Me._StockType = stockType
+        Me._EntryTime = tradingDate
+        Me._TradingDate = tradingDate.Date
+        Me._EntryDirection = entryDirection
+        Me._FirstEntryDirection = firstEntryDirection
+        Me._EntryPrice = entryPrice
+        Me._EntryBuffer = entryBuffer
+        Me._SquareOffType = squareOffType
+        Me._EntryCondition = entryCondition
+        Me._EntryRemark = entryRemark
+        Me._Quantity = quantity
+        Me._LotSize = lotSize
+        Me._PotentialTarget = potentialTarget
+        Me._TargetRemark = targetRemark
+        Me._PotentialStopLoss = potentialStopLoss
+        Me._StoplossBuffer = stoplossBuffer
+        Me._SLRemark = slRemark
+        Me._StoplossSetTime = Me._EntryTime
+        Me._SignalCandle = signalCandle
+        Me._TradeUpdateTimeStamp = Me._EntryTime
+        Me._TradeCurrentStatus = TradeExecutionStatus.None
+        Me._ExitTime = Date.MinValue
+        Me._ExitPrice = Double.MinValue
+        Me._ExitCondition = TradeExitCondition.None
+        Me._ExitRemark = Nothing
+    End Sub
     'End Indibar
 #End Region
 
@@ -153,6 +200,7 @@ Public Class Trade
     Public ReadOnly Property EntryTime As DateTime
     Public ReadOnly Property TradingDate As Date '''''
     Public ReadOnly Property EntryDirection As TradeExecutionDirection
+    Public ReadOnly Property FirstEntryDirection As TradeExecutionDirection
     Public ReadOnly Property EntryPrice As Double
     Public ReadOnly Property EntryBuffer As Decimal
     Public ReadOnly Property SquareOffType As TradeType
