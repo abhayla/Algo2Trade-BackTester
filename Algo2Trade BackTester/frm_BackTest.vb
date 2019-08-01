@@ -309,6 +309,8 @@ Public Class frm_BackTest
                                                 .StopAtTargetReach = True
                                                 .EntryAtOneMinuteCandleOpen = False
                                                 .EntryAccordingToSequence = True
+                                                .AddExtraTrade = True
+                                                .ExtraTradeTargetMultiplier = 1.5
                                                 .ExitOnStockFixedTargetStoploss = False
                                                 .StockMaxProfitPerDay = Decimal.MaxValue
                                                 .StockMaxLossPerDay = Decimal.MinValue

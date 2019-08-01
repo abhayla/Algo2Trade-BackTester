@@ -151,7 +151,8 @@ Public Class Trade
                     ByVal stoplossBuffer As Decimal,
                     ByVal slRemark As String,
                     ByVal signalCandle As Payload,
-                    ByVal firstEntryDirection As TradeExecutionDirection)
+                    ByVal firstEntryDirection As TradeExecutionDirection,
+                    ByVal additionalTrade As Boolean)
         Me._OriginatingStrategy = originatingStrategy
         Me._TradingSymbol = tradingSymbol
         Me._StockType = stockType
@@ -159,6 +160,7 @@ Public Class Trade
         Me._TradingDate = tradingDate.Date
         Me._EntryDirection = entryDirection
         Me._FirstEntryDirection = firstEntryDirection
+        Me._AdditionalTrade = additionalTrade
         Me._EntryPrice = entryPrice
         Me._EntryBuffer = entryBuffer
         Me._SquareOffType = squareOffType
@@ -201,6 +203,7 @@ Public Class Trade
     Public ReadOnly Property TradingDate As Date '''''
     Public ReadOnly Property EntryDirection As TradeExecutionDirection
     Public ReadOnly Property FirstEntryDirection As TradeExecutionDirection
+    Public ReadOnly Property AdditionalTrade As Boolean
     Public ReadOnly Property EntryPrice As Double
     Public ReadOnly Property EntryBuffer As Decimal
     Public ReadOnly Property SquareOffType As TradeType

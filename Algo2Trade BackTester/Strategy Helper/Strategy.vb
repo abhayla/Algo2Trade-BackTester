@@ -1453,7 +1453,8 @@ Public MustInherit Class Strategy
             Dim completeTrades As List(Of Trade) = GetSpecificTrades(currentMinutePayload, tradeType, Trade.TradeExecutionStatus.Close)
             If completeTrades IsNot Nothing AndAlso completeTrades.Count > 0 Then
                 Dim targetTrades As List(Of Trade) = completeTrades.FindAll(Function(x)
-                                                                                Return x.ExitCondition = Trade.TradeExitCondition.Target
+                                                                                Return x.ExitCondition = Trade.TradeExitCondition.Target AndAlso
+                                                                                    x.AdditionalTrade = False
                                                                             End Function)
                 If targetTrades IsNot Nothing AndAlso targetTrades.Count > 0 Then
                     ret = True
