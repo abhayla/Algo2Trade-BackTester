@@ -114,6 +114,9 @@ Public Class ATMPinBarStrategyRule
                         If potentialHighEntryPrice <> 0 AndAlso _inputPayload(runningPayload).High >= potentialHighEntryPrice AndAlso signal = 1 Then
                             entryData.BuySignal = 1
                             entryData.BuyEntry = potentialHighEntryPrice
+                            If _inputPayload(runningPayload).Open > potentialHighEntryPrice Then
+                                entryData.BuyEntry = _inputPayload(runningPayload).Open
+                            End If
                             entryData.BuyStoploss = entryData.BuyEntry - ConvertFloorCeling(_usableATR * ATRMultiplier, _tickSize, RoundOfType.Celing)
                             entryData.BuyTarget = entryData.BuyEntry + ConvertFloorCeling((entryData.BuyEntry - entryData.BuyStoploss) * TargetMultiplier, _tickSize, RoundOfType.Celing)
                             If _firstEntryQuantity = 0 Then
@@ -136,6 +139,9 @@ Public Class ATMPinBarStrategyRule
                         If potentialLowEntryPrice <> 0 AndAlso _inputPayload(runningPayload).Low <= potentialLowEntryPrice AndAlso signal = -1 Then
                             entryData.SellSignal = -1
                             entryData.SellEntry = potentialLowEntryPrice
+                            If _inputPayload(runningPayload).Open < potentialLowEntryPrice Then
+                                entryData.SellEntry = _inputPayload(runningPayload).Open
+                            End If
                             entryData.SellStoploss = entryData.SellEntry + ConvertFloorCeling(_usableATR * ATRMultiplier, _tickSize, RoundOfType.Celing)
                             entryData.SellTarget = entryData.SellEntry - ConvertFloorCeling((entryData.SellStoploss - entryData.SellEntry) * TargetMultiplier, _tickSize, RoundOfType.Celing)
                             If _firstEntryQuantity = 0 Then

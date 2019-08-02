@@ -187,6 +187,50 @@ Public MustInherit Class Strategy
             Return ret
         End Get
     End Property
+    Protected ReadOnly Property NumberOfStoplossTradesPerStockPerDay(ByVal currentDate As Date, ByVal currentStockName As String) As Integer
+        Get
+            Dim ret As Integer = 0
+            If TradesTaken IsNot Nothing AndAlso TradesTaken.Count > 0 AndAlso TradesTaken.ContainsKey(currentDate.Date) AndAlso TradesTaken(currentDate.Date).ContainsKey(currentStockName) Then
+                Dim tradeList As List(Of Trade) = TradesTaken(currentDate.Date)(currentStockName).FindAll(Function(x)
+                                                                                                              Return x.ExitCondition <> Trade.TradeExitCondition.Cancelled AndAlso
+                                                                                                              x.TradeCurrentStatus <> Trade.TradeExecutionStatus.Open AndAlso
+                                                                                                              x.ExitCondition = Trade.TradeExitCondition.StopLoss
+                                                                                                          End Function)
+                If tradeList IsNot Nothing AndAlso tradeList.Count > 0 Then
+                    Dim artnrGroups = From a In tradeList
+                                      Group a By Key = a.Tag Into Group
+                                      Select artnr = Key, numbersCount = Group.Count()
+
+                    If artnrGroups IsNot Nothing AndAlso artnrGroups.Count > 0 Then
+                        ret = artnrGroups.Count
+                    End If
+                End If
+            End If
+            Return ret
+        End Get
+    End Property
+    Protected ReadOnly Property NumberOfTargetTradesPerStockPerDay(ByVal currentDate As Date, ByVal currentStockName As String) As Integer
+        Get
+            Dim ret As Integer = 0
+            If TradesTaken IsNot Nothing AndAlso TradesTaken.Count > 0 AndAlso TradesTaken.ContainsKey(currentDate.Date) AndAlso TradesTaken(currentDate.Date).ContainsKey(currentStockName) Then
+                Dim tradeList As List(Of Trade) = TradesTaken(currentDate.Date)(currentStockName).FindAll(Function(x)
+                                                                                                              Return x.ExitCondition <> Trade.TradeExitCondition.Cancelled AndAlso
+                                                                                                              x.TradeCurrentStatus <> Trade.TradeExecutionStatus.Open AndAlso
+                                                                                                              x.ExitCondition = Trade.TradeExitCondition.Target
+                                                                                                          End Function)
+                If tradeList IsNot Nothing AndAlso tradeList.Count > 0 Then
+                    Dim artnrGroups = From a In tradeList
+                                      Group a By Key = a.Tag Into Group
+                                      Select artnr = Key, numbersCount = Group.Count()
+
+                    If artnrGroups IsNot Nothing AndAlso artnrGroups.Count > 0 Then
+                        ret = artnrGroups.Count
+                    End If
+                End If
+            End If
+            Return ret
+        End Get
+    End Property
     Protected ReadOnly Property NumberOfTradesPerDay(ByVal currentDate As Date) As Integer
         Get
             Dim ret As Integer = 0

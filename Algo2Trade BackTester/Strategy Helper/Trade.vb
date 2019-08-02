@@ -210,9 +210,7 @@ Public Class Trade
     Public ReadOnly Property EntryCondition As TradeEntryCondition
     Public ReadOnly Property EntryRemark As String
     Public ReadOnly Property Quantity As Integer
-    'start indibar
     Public ReadOnly Property LotSize As Integer
-    'end indibar
     Public ReadOnly Property PotentialTarget As Double
     Public ReadOnly Property TargetRemark As String
     Public ReadOnly Property PotentialStopLoss As Double
@@ -413,6 +411,7 @@ Public Class Trade
                             Optional ByVal ExitRemark As String = Nothing,
                             Optional ByVal Tag As String = Nothing,
                             Optional ByVal SquareOffValue As Double = Double.MinValue,
+                            Optional ByVal AdditionalTrade As Boolean = False,
                             Optional ByVal Supporting1 As String = Nothing,
                             Optional ByVal Supporting2 As String = Nothing,
                             Optional ByVal Supporting3 As String = Nothing,
@@ -445,6 +444,7 @@ Public Class Trade
         If ExitRemark IsNot Nothing Then _ExitRemark = ExitRemark
         If Tag IsNot Nothing Then _Tag = Tag
         If SquareOffValue <> Double.MinValue Then _SquareOffValue = SquareOffValue
+        If AdditionalTrade Then _AdditionalTrade = AdditionalTrade
         If Supporting1 IsNot Nothing Then _Supporting1 = Supporting1
         If Supporting2 IsNot Nothing Then _Supporting2 = Supporting2
         If Supporting3 IsNot Nothing Then _Supporting3 = Supporting3

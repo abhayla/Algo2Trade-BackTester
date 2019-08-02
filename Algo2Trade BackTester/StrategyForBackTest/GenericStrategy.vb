@@ -28,6 +28,10 @@ Public Class GenericStrategy
     Public Property EntryAccordingToSequence As Boolean = False
     Public Property AddExtraTrade As Boolean = False
     Public Property ExtraTradeTargetMultiplier As Decimal = 1.5
+    Public Property TakeStoplossMakeupTrade As Boolean = False
+    Public Property StoplossMakeupTradeTargetMultiplier As Decimal = 1.5
+    Public Property MaxNumberOfStoplossTrades As Decimal = 2
+    Public Property MaxNumberOfTargetTrades As Decimal = 3
     Public Property NIFTY50Stocks As String()
 
     'For ATR Based Candle Range Strategy
@@ -224,16 +228,16 @@ Public Class GenericStrategy
 
                                 If XDayXMinuteHAPayload IsNot Nothing AndAlso XDayXMinuteHAPayload.Count > 0 Then
                                     'TODO: Change
-                                    'Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
-                                    '    strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
-                                    '    strategyBaseRule.QuantityFlag = Me.QuantityFlag
-                                    '    strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
-                                    '    strategyBaseRule.FirstTradeTargetMultiplier = Me.TradeTargetMultiplier
-                                    '    strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
-                                    '    strategyBaseRule.ForwardTradeTargetMultiplier = Me.TradeTargetMultiplier
-                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
-                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                    'End Using
+                                    Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
+                                        strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
+                                        strategyBaseRule.QuantityFlag = Me.QuantityFlag
+                                        strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
+                                        strategyBaseRule.FirstTradeTargetMultiplier = Me.TradeTargetMultiplier
+                                        strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
+                                        strategyBaseRule.ForwardTradeTargetMultiplier = Me.TradeTargetMultiplier
+                                        strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    End Using
                                     'Using strategyBaseRule As New VolumeReversalStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
@@ -274,13 +278,16 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
-                                    Using strategyBaseRule As New ATMPinBarStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
-                                        strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
-                                        strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
-                                        strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
-                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                        If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
-                                    End Using
+                                    'Using strategyBaseRule As New ATMPinBarStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    '    strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    '    If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
+                                    'End Using
+
+
+                                    If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                 End If
                                 If XDayRuleOutputPayload IsNot Nothing Then
                                     If XDayRuleOutputPayload.ContainsKey("Signal") Then XDayRuleSignalPayload = CType(XDayRuleOutputPayload("Signal"), Dictionary(Of Date, EntryDetails))
@@ -1116,6 +1123,24 @@ Public Class GenericStrategy
 
                                             SetCurrentLTPForStock(currentMinuteCandlePayload, tick, Trade.TradeType.MIS)
 
+                                            'Stock Max Number of SL Trades
+                                            If Me.TakeStoplossMakeupTrade Then
+                                                Dim numberOfSLTrades As Integer = NumberOfStoplossTradesPerStockPerDay(currentMinuteCandlePayload.PayloadDate, currentMinuteCandlePayload.TradingSymbol)
+                                                Dim numberOfTargetTrades As Integer = NumberOfTargetTradesPerStockPerDay(currentMinuteCandlePayload.PayloadDate, currentMinuteCandlePayload.TradingSymbol)
+                                                If numberOfTargetTrades - numberOfSLTrades <= MaxNumberOfStoplossTrades * -1 Then
+                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Number Of Stoploss trades reached")
+                                                End If
+                                            End If
+
+                                            'Stock Max Number of Target Trades
+                                            If Me.TakeStoplossMakeupTrade Then
+                                                Dim numberOfSLTrades As Integer = NumberOfStoplossTradesPerStockPerDay(currentMinuteCandlePayload.PayloadDate, currentMinuteCandlePayload.TradingSymbol)
+                                                Dim numberOfTargetTrades As Integer = NumberOfTargetTradesPerStockPerDay(currentMinuteCandlePayload.PayloadDate, currentMinuteCandlePayload.TradingSymbol)
+                                                If numberOfTargetTrades - numberOfSLTrades >= MaxNumberOfTargetTrades Then
+                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Number Of Target trades reached")
+                                                End If
+                                            End If
+
                                             'Stock MTM Check
                                             If ExitOnStockFixedTargetStoploss Then
                                                 If StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) >= StockMaxProfitPerDay Then
@@ -1164,6 +1189,22 @@ Public Class GenericStrategy
                                                                 If Me.StopAtTargetReach AndAlso IsAnyTradeOfTheStockTargetReached(currentMinuteCandlePayload, Trade.TradeType.MIS) Then
                                                                     CancelTrade(potentialEntryTrade, currentMinuteCandlePayload, "Previous Trade Target reached")
                                                                 Else
+                                                                    If Me.TakeStoplossMakeupTrade Then
+                                                                        Dim numberOfSLTrades As Integer = NumberOfStoplossTradesPerStockPerDay(currentMinuteCandlePayload.PayloadDate, currentMinuteCandlePayload.TradingSymbol)
+                                                                        Dim numberOfTargetTrades As Integer = NumberOfTargetTradesPerStockPerDay(currentMinuteCandlePayload.PayloadDate, currentMinuteCandlePayload.TradingSymbol)
+                                                                        If numberOfTargetTrades - numberOfSLTrades < 0 AndAlso Not potentialEntryTrade.AdditionalTrade Then
+                                                                            Dim target As Decimal = Decimal.MinValue
+                                                                            Dim targetRemark As String = Nothing
+                                                                            If potentialEntryTrade.EntryDirection = Trade.TradeExecutionDirection.Buy Then
+                                                                                target = potentialEntryTrade.EntryPrice + ConvertFloorCeling(((potentialEntryTrade.PotentialTarget - potentialEntryTrade.EntryPrice) / Me.TradeTargetMultiplier) * Me.StoplossMakeupTradeTargetMultiplier, Strategy.TickSize, RoundOfType.Celing)
+                                                                                targetRemark = String.Format("Target: {0}", target - potentialEntryTrade.EntryPrice)
+                                                                            ElseIf potentialEntryTrade.EntryDirection = Trade.TradeExecutionDirection.Sell Then
+                                                                                target = potentialEntryTrade.EntryPrice - ConvertFloorCeling(((potentialEntryTrade.EntryPrice - potentialEntryTrade.PotentialTarget) / Me.TradeTargetMultiplier) * Me.StoplossMakeupTradeTargetMultiplier, Strategy.TickSize, RoundOfType.Celing)
+                                                                                targetRemark = String.Format("Target: {0}", potentialEntryTrade.EntryPrice - target)
+                                                                            End If
+                                                                            potentialEntryTrade.UpdateTrade(PotentialTarget:=target, TargetRemark:=targetRemark, AdditionalTrade:=True)
+                                                                        End If
+                                                                    End If
                                                                     If SameDirectionTrade Then
                                                                         If lastTrade IsNot Nothing AndAlso lastTrade.ExitCondition = Trade.TradeExitCondition.StopLoss AndAlso
                                                                             lastTrade.PLPoint > 0 AndAlso lastTrade.EntryDirection = potentialEntryTrade.EntryDirection Then
@@ -1201,7 +1242,9 @@ Public Class GenericStrategy
                                                                                     placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
                                                                                 End If
                                                                             Else
-                                                                                placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                                If tick.Open = potentialEntryTrade.EntryPrice Then
+                                                                                    placeOrderResponse = EnterTradeIfPossible(potentialEntryTrade, tick, lastTrade, GetForwardTicksWithLevel(currentDayOneMinuteStocksPayload(stockName), tick.PayloadDate))
+                                                                                End If
                                                                             End If
                                                                             If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.Item1 Then
                                                                                 If timeChart Is Nothing Then timeChart = New Dictionary(Of String, Date)
