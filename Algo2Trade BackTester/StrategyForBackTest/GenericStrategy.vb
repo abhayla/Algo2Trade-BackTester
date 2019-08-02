@@ -270,11 +270,17 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     '    If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                     'End Using
-                                    Using strategyBaseRule As New BankNiftyStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    'Using strategyBaseRule As New BankNiftyStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
+                                    Using strategyBaseRule As New ATMPinBarStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                        strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                        strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                        If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                     End Using
-
                                 End If
                                 If XDayRuleOutputPayload IsNot Nothing Then
                                     If XDayRuleOutputPayload.ContainsKey("Signal") Then XDayRuleSignalPayload = CType(XDayRuleOutputPayload("Signal"), Dictionary(Of Date, EntryDetails))

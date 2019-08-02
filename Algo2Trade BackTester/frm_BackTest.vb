@@ -242,7 +242,7 @@ Public Class frm_BackTest
 
             If endDate.Date < tradeEndDate Then tradeEndDate = endDate
             For timeframe As Integer = 1 To 1 Step 2
-                For targetMultiplier As Double = 4 To 4 Step 1
+                For targetMultiplier As Double = 3 To 3 Step 1
                     For trlng As Integer = 0 To 0 Step 1
                         For smdirectiocEntry As Integer = 1 To 1 Step 1
                             'If trlng = 0 And smdirectiocEntry = 1 Then Continue For
@@ -273,9 +273,9 @@ Public Class frm_BackTest
                                                 .MinimumEarnedCapitalToWithdraw = 400000
                                                 .AmountToBeWithdrawn = 100000
 
-                                                '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
+                                                .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
                                                 '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Pre Market Future Stock List Gap Based.csv")
-                                                .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "BANKNIFTY Stock List.csv")
+                                                '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "BANKNIFTY Stock List.csv")
 
                                                 '1 from investment, 2 from SL, 3 from futures lot
                                                 .QuantityFlag = 3
@@ -285,7 +285,7 @@ Public Class frm_BackTest
                                                 .CandleBasedEntry = True
 
                                                 .TradeTargetMultiplier = targetMultiplier
-                                                .TradeStoplossMultiplier = 1
+                                                .TradeStoplossMultiplier = 1.5
 
                                                 Select Case strategyStockType
                                                     Case Trade.TypeOfStock.Cash
@@ -295,7 +295,7 @@ Public Class frm_BackTest
                                                     Case Trade.TypeOfStock.Currency
                                                         Strategy.MarginMultiplier = 70
                                                     Case Trade.TypeOfStock.Futures
-                                                        Strategy.MarginMultiplier = 64
+                                                        Strategy.MarginMultiplier = 30
                                                 End Select
                                                 .NumberOfTradeableStockPerDay = 5
                                                 .NumberOfTradePerDay = Integer.MaxValue
@@ -303,13 +303,13 @@ Public Class frm_BackTest
                                                 .CountTradesWithBreakevenMovement = countBreakevenTrades
                                                 .TrailingSL = trlng
                                                 .SameDirectionTrade = smdirectiocEntry
-                                                .ReverseSignalTrade = True
+                                                .ReverseSignalTrade = False
                                                 .ModifyTarget = False
                                                 .ModifyStoploss = False
                                                 .StopAtTargetReach = True
                                                 .EntryAtOneMinuteCandleOpen = False
-                                                .EntryAccordingToSequence = True
-                                                .AddExtraTrade = True
+                                                .EntryAccordingToSequence = False
+                                                .AddExtraTrade = False
                                                 .ExtraTradeTargetMultiplier = 1.5
                                                 .ExitOnStockFixedTargetStoploss = False
                                                 .StockMaxProfitPerDay = Decimal.MaxValue

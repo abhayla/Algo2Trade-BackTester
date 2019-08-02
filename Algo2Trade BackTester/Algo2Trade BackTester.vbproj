@@ -113,6 +113,7 @@
     </Compile>
     <Compile Include="Indicator Helper\IndicatorHelper.vb" />
     <Compile Include="JOYMABABA Strategy Rules\ATMGapStrategyRule.vb" />
+    <Compile Include="JOYMABABA Strategy Rules\ATMPinBarStrategyRule.vb" />
     <Compile Include="JOYMABABA Strategy Rules\ATMStrategyRule_2.vb" />
     <Compile Include="JOYMABABA Strategy Rules\ATRBandHedging.vb" />
     <Compile Include="JOYMABABA Strategy Rules\ATRBasedCandleRangeStrategyRule.vb" />
