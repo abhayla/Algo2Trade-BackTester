@@ -298,27 +298,37 @@ Public Class frm_BackTest
                                                     Case Trade.TypeOfStock.Futures
                                                         Strategy.MarginMultiplier = 30
                                                 End Select
+
                                                 .NumberOfTradeableStockPerDay = 5
+
                                                 .NumberOfTradePerDay = Integer.MaxValue
                                                 .NumberOfTradePerStockPerDay = nmbrOfTrade
+
                                                 .CountTradesWithBreakevenMovement = countBreakevenTrades
                                                 .TrailingSL = trlng
                                                 .SameDirectionTrade = smdirectiocEntry
                                                 .ReverseSignalTrade = True
+
                                                 .ModifyTarget = False
                                                 .ModifyStoploss = False
+
                                                 .StopAtTargetReach = True
+
                                                 .EntryAtOneMinuteCandleOpen = False
                                                 .EntryAccordingToSequence = False
+
                                                 .AddExtraTrade = False
                                                 .ExtraTradeTargetMultiplier = 1.5
+
                                                 .TakeStoplossMakeupTrade = False
                                                 .StoplossMakeupTradeTargetMultiplier = 1.3
                                                 .MaxNumberOfStoplossTrades = 3
                                                 .MaxNumberOfTargetTrades = 3
+
                                                 .ExitOnStockFixedTargetStoploss = False
                                                 .StockMaxProfitPerDay = Decimal.MaxValue
                                                 .StockMaxLossPerDay = Decimal.MinValue
+
                                                 .ExitOnOverAllFixedTargetStoploss = True
                                                 .OverAllProfitPerDay = 10000
                                                 .OverAllLossPerDay = overAllLoss * -1

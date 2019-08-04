@@ -1566,7 +1566,6 @@ Public Class GenericStrategy
                         Else
                             instrumentName = tradingSymbol
                         End If
-                        'ret.Add(instrumentName, {dt.Rows(i).Item(5), dt.Rows(i).Item(5), dt.Rows(i).Item(3), dt.Rows(i).Item(4)})
                         ret.Add(instrumentName, {dt.Rows(i).Item(2), dt.Rows(i).Item(2), dt.Rows(i).Item(5), dt.Rows(i).Item(6)})
                         counter += 1
                         'If counter = Me.NumberOfTradeableStockPerDay Then Exit For
