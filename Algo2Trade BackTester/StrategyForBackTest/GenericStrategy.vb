@@ -279,9 +279,15 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     'End Using
-                                    Using strategyBaseRule As New ATRBandBasedStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    'Using strategyBaseRule As New ATRBandBasedStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                    '    strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
+                                    Using strategyBaseRule As New ATMPinBarLiveStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
                                         strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
                                         strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                        strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
                                         strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
                                     End Using
 
@@ -1564,9 +1570,7 @@ Public Class GenericStrategy
                         Else
                             instrumentName = tradingSymbol
                         End If
-                        If dt.Rows(i).Item(3) >= 3 Then
-                            ret.Add(instrumentName, {dt.Rows(i).Item(2), dt.Rows(i).Item(2), dt.Rows(i).Item(5), dt.Rows(i).Item(6)})
-                        End If
+                        ret.Add(instrumentName, {dt.Rows(i).Item(2), dt.Rows(i).Item(2), dt.Rows(i).Item(5), dt.Rows(i).Item(6)})
                         counter += 1
                         'If counter = Me.NumberOfTradeableStockPerDay Then Exit For
                     End If

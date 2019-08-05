@@ -242,14 +242,14 @@ Public Class frm_BackTest
 
             If endDate.Date < tradeEndDate Then tradeEndDate = endDate
             For timeframe As Integer = 1 To 1 Step 2
-                For targetMultiplier As Double = 3.5 To 3.5 Step 1
+                For targetMultiplier As Double = 3 To 3 Step 1
                     For trlng As Integer = 0 To 0 Step 1
                         For smdirectiocEntry As Integer = 1 To 1 Step 1
                             'If trlng = 0 And smdirectiocEntry = 1 Then Continue For
                             For countBreakevenTrades As Integer = 1 To 1 Step 1
                                 'If trlng = 0 And countBreakevenTrades = 1 Then Continue For
                                 For overAllLoss As Decimal = 40000 To 40000 Step 10000
-                                    For nmbrOfTrade As Integer = 4 To 4 Step 1
+                                    For nmbrOfTrade As Integer = 100 To 100 Step 1
                                         Using backtestStrategy As New GenericStrategy(canceller:=_cts,
                                                                                         tickSize:=0.05,
                                                                                         eodExitTime:=TimeSpan.Parse("15:15:00"),
@@ -273,8 +273,8 @@ Public Class frm_BackTest
                                                 .MinimumEarnedCapitalToWithdraw = 400000
                                                 .AmountToBeWithdrawn = 100000
 
-                                                '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
-                                                .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Pre Market Future Stock List Gap Based.csv")
+                                                .StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Future Stock List ATR Based.csv")
+                                                '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Pre Market Future Stock List Gap Based.csv")
                                                 '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "BANKNIFTY Stock List.csv")
                                                 '.StockFileName = Path.Combine(My.Application.Info.DirectoryPath, "Today.csv")
 
