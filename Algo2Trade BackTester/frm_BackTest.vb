@@ -241,15 +241,15 @@ Public Class frm_BackTest
             tradeEndDate = endDate.Date
 
             If endDate.Date < tradeEndDate Then tradeEndDate = endDate
-            For timeframe As Integer = 2 To 2 Step 2
-                For targetMultiplier As Double = 4 To 4 Step 1
-                    For trlng As Integer = 1 To 1 Step 1
-                        For smdirectiocEntry As Integer = 0 To 0 Step 1
-                            If trlng = 0 And smdirectiocEntry = 1 Then Continue For
-                            For countBreakevenTrades As Integer = 0 To 0 Step 1
-                                If trlng = 0 And countBreakevenTrades = 1 Then Continue For
+            For timeframe As Integer = 1 To 1 Step 2
+                For targetMultiplier As Double = 3.5 To 3.5 Step 1
+                    For trlng As Integer = 0 To 0 Step 1
+                        For smdirectiocEntry As Integer = 1 To 1 Step 1
+                            'If trlng = 0 And smdirectiocEntry = 1 Then Continue For
+                            For countBreakevenTrades As Integer = 1 To 1 Step 1
+                                'If trlng = 0 And countBreakevenTrades = 1 Then Continue For
                                 For overAllLoss As Decimal = 40000 To 40000 Step 10000
-                                    For nmbrOfTrade As Integer = 8 To 8 Step 1
+                                    For nmbrOfTrade As Integer = 4 To 4 Step 1
                                         Using backtestStrategy As New GenericStrategy(canceller:=_cts,
                                                                                         tickSize:=0.05,
                                                                                         eodExitTime:=TimeSpan.Parse("15:15:00"),
@@ -281,9 +281,7 @@ Public Class frm_BackTest
                                                 '1 from investment, 2 from SL, 3 from futures lot
                                                 .QuantityFlag = 3
                                                 .MaxStoplossAmount = 1000
-                                                .EarlyStoploss = False
                                                 .CapitalToBeUsed = 20000
-                                                .CandleBasedEntry = True
 
                                                 .TradeTargetMultiplier = targetMultiplier
                                                 .TradeStoplossMultiplier = 1.5
@@ -307,7 +305,7 @@ Public Class frm_BackTest
                                                 .CountTradesWithBreakevenMovement = countBreakevenTrades
                                                 .TrailingSL = trlng
                                                 .SameDirectionTrade = smdirectiocEntry
-                                                .ReverseSignalTrade = True
+                                                .ReverseSignalTrade = False
 
                                                 .ModifyTarget = False
                                                 .ModifyStoploss = False
@@ -315,7 +313,8 @@ Public Class frm_BackTest
                                                 .StopAtTargetReach = True
 
                                                 .EntryAtOneMinuteCandleOpen = False
-                                                .EntryAccordingToSequence = False
+
+                                                .EntryAccordingToSequence = True
 
                                                 .AddExtraTrade = False
                                                 .ExtraTradeTargetMultiplier = 1.5
@@ -329,7 +328,7 @@ Public Class frm_BackTest
                                                 .StockMaxProfitPerDay = Decimal.MaxValue
                                                 .StockMaxLossPerDay = Decimal.MinValue
 
-                                                .ExitOnOverAllFixedTargetStoploss = True
+                                                .ExitOnOverAllFixedTargetStoploss = False
                                                 .OverAllProfitPerDay = 10000
                                                 .OverAllLossPerDay = overAllLoss * -1
                                             End With

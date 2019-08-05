@@ -40,9 +40,7 @@ Public Class GenericStrategy
     Public StockFileName As String = Nothing
     Public TradeTargetMultiplier As Decimal = 4
     Public TradeStoplossMultiplier As Decimal = 1
-    Public EarlyStoploss As Boolean = False
     Public CapitalToBeUsed As Decimal = 20000
-    Public CandleBasedEntry As Boolean = False
     'End
     ''For JOYMA_ATM
     'Public MinimumWickPercentageOfCandleRange = 50
@@ -228,16 +226,14 @@ Public Class GenericStrategy
 
                                 If XDayXMinuteHAPayload IsNot Nothing AndAlso XDayXMinuteHAPayload.Count > 0 Then
                                     'TODO: Change
-                                    Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
-                                        strategyBaseRule.CandleBasedEntry = Me.CandleBasedEntry
-                                        strategyBaseRule.QuantityFlag = Me.QuantityFlag
-                                        strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
-                                        strategyBaseRule.FirstTradeTargetMultiplier = Me.TradeTargetMultiplier
-                                        strategyBaseRule.EarlyStoploss = Me.EarlyStoploss
-                                        strategyBaseRule.ForwardTradeTargetMultiplier = Me.TradeTargetMultiplier
-                                        strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
-                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                    End Using
+                                    'Using strategyBaseRule As New ATRBasedCandleRangeStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, stockList(stock)(2), stockList(stock)(3), _StockType)
+                                    '    strategyBaseRule.QuantityFlag = Me.QuantityFlag
+                                    '    strategyBaseRule.MaxStoplossAmount = Me.MaxStoplossAmount
+                                    '    strategyBaseRule.FirstTradeTargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.ForwardTradeTargetMultiplier = Me.TradeTargetMultiplier
+                                    '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                    '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    'End Using
                                     'Using strategyBaseRule As New VolumeReversalStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
@@ -272,7 +268,6 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.ATRToBeUsed = ATMStrategyRule_2.ATRCandle.PreviousDayLastCandle
                                     '    strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                    '    If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                     'End Using
                                     'Using strategyBaseRule As New BankNiftyStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
@@ -283,9 +278,12 @@ Public Class GenericStrategy
                                     '    strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
                                     '    strategyBaseRule.ATRMultiplier = Me.TradeStoplossMultiplier
                                     '    strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
-                                    '    If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                     'End Using
-
+                                    Using strategyBaseRule As New ATRBandBasedStrategyRule(XDayXMinuteHAPayload, TickSize, stockList(stock)(0), _canceller, _common, tradeCheckingDate, _SignalTimeFrame, _StockType)
+                                        strategyBaseRule.TargetMultiplier = Me.TradeTargetMultiplier
+                                        strategyBaseRule.CapitalToBeUsed = Me.CapitalToBeUsed
+                                        strategyBaseRule.CalculateRule(XDayRuleOutputPayload)
+                                    End Using
 
                                     If XDayRuleOutputPayload IsNot Nothing Then eligibleStockCount += 1
                                 End If
@@ -1566,7 +1564,9 @@ Public Class GenericStrategy
                         Else
                             instrumentName = tradingSymbol
                         End If
-                        ret.Add(instrumentName, {dt.Rows(i).Item(2), dt.Rows(i).Item(2), dt.Rows(i).Item(5), dt.Rows(i).Item(6)})
+                        If dt.Rows(i).Item(3) >= 3 Then
+                            ret.Add(instrumentName, {dt.Rows(i).Item(2), dt.Rows(i).Item(2), dt.Rows(i).Item(5), dt.Rows(i).Item(6)})
+                        End If
                         counter += 1
                         'If counter = Me.NumberOfTradeableStockPerDay Then Exit For
                     End If
@@ -1602,9 +1602,7 @@ Public Class GenericStrategy
                 MaxStoplossAmount = Nothing
                 StockFileName = Nothing
                 TradeTargetMultiplier = Nothing
-                EarlyStoploss = Nothing
                 CapitalToBeUsed = Nothing
-                CandleBasedEntry = Nothing
                 If _StockData IsNot Nothing Then _StockData.Clear()
 
                 _canceller = Nothing
