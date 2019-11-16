@@ -179,7 +179,13 @@ Public Class GenericStrategy
                             XDayOneMinutePayload = Data.PastIntradayData(tradeCheckingDate)(stock)
                         Else
                             If Me.DataSource = SourceOfData.Database Then
-                                XDayOneMinutePayload = _common.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                                'XDayOneMinutePayload = _common.GetRawPayload(_DatabaseTable, stock, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                                Dim tradingSymbol As String = Nothing
+                                Dim symbolToken As Tuple(Of String, String) = _common.GetCurrentTradingSymbolWithInstrumentToken(_DatabaseTable, tradeCheckingDate, stock)
+                                If symbolToken IsNot Nothing Then tradingSymbol = symbolToken.Item2
+                                If tradingSymbol IsNot Nothing Then
+                                    XDayOneMinutePayload = _common.GetRawPayloadForSpecificTradingSymbol(_DatabaseTable, tradingSymbol, tradeCheckingDate.AddDays(-7), tradeCheckingDate)
+                                End If
                             ElseIf Me.DataSource = SourceOfData.Live Then
                                 XDayOneMinutePayload = Await _common.GetHistoricalData(_DatabaseTable, stock, tradeCheckingDate).ConfigureAwait(False)
                             End If
@@ -364,6 +370,9 @@ Public Class GenericStrategy
                                     potentialCandleSignalTime = potentialTickSignalTime
                                 End If
                                 For Each stockName In stockList.Keys
+                                    If Not currentDayOneMinuteStocksPayload.ContainsKey(stockName) Then
+                                        Continue For
+                                    End If
                                     ''indibar
                                     ''for setting 1% mtm exit for each stock
                                     'Me.StockMaxProfitPerDay = CalculatePL(stockName, stockList(stockName)(2), stockList(stockName)(2) + (stockList(stockName)(2) * 1 / 100), stockList(stockName)(0), stockList(stockName)(1), tradeStockType)
@@ -707,6 +716,24 @@ Public Class GenericStrategy
 
                                             SetCurrentLTPForStock(currentMinuteCandlePayload, tick, Trade.TradeType.MIS)
 
+                                            'Stock MTM Check
+                                            If ExitOnStockFixedTargetStoploss Then
+                                                If StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) >= StockMaxProfitPerDay Then
+                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock Profit reached for the day")
+                                                ElseIf StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) <= StockMaxLossPerDay Then
+                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock Loss reached for the day")
+                                                End If
+                                            End If
+
+                                            'OverAll MTM Check
+                                            If ExitOnOverAllFixedTargetStoploss Then
+                                                If AllPLAfterBrokerage(tradeCheckingDate) >= OverAllProfitPerDay Then
+                                                    ExitAllTradeByForce(potentialTickSignalTime, currentDayOneMinuteStocksPayload, Trade.TradeType.MIS, "Max Profit reached for the day")
+                                                ElseIf AllPLAfterBrokerage(tradeCheckingDate) <= OverAllLossPerDay Then
+                                                    ExitAllTradeByForce(potentialTickSignalTime, currentDayOneMinuteStocksPayload, Trade.TradeType.MIS, "Max Loss reached for the day")
+                                                End If
+                                            End If
+
                                             'Enter Trade
                                             Dim potentialEntryTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Open)
                                             If potentialEntryTrades IsNot Nothing AndAlso potentialEntryTrades.Count > 0 Then
@@ -849,24 +876,6 @@ Public Class GenericStrategy
                                             '        StockPLPoint(tradeCheckingDate, tick.TradingSymbol) <= -0.1 Then
                                             '    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock PL Point reached for the day")
                                             'End If
-
-                                            'Stock MTM Check
-                                            If ExitOnStockFixedTargetStoploss Then
-                                                If StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) >= StockMaxProfitPerDay Then
-                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock Profit reached for the day")
-                                                ElseIf StockPLAfterBrokerage(tradeCheckingDate, tick.TradingSymbol) <= StockMaxLossPerDay Then
-                                                    ExitStockTradesByForce(tick, Trade.TradeType.MIS, "Max Stock Loss reached for the day")
-                                                End If
-                                            End If
-
-                                            'OverAll MTM Check
-                                            If ExitOnOverAllFixedTargetStoploss Then
-                                                If AllPLAfterBrokerage(tradeCheckingDate) >= OverAllProfitPerDay Then
-                                                    ExitAllTradeByForce(potentialTickSignalTime, currentDayOneMinuteStocksPayload, Trade.TradeType.MIS, "Max Profit reached for the day")
-                                                ElseIf AllPLAfterBrokerage(tradeCheckingDate) <= OverAllLossPerDay Then
-                                                    ExitAllTradeByForce(potentialTickSignalTime, currentDayOneMinuteStocksPayload, Trade.TradeType.MIS, "Max Loss reached for the day")
-                                                End If
-                                            End If
 
                                             'Exit Trade
                                             Dim potentialExitTrades As List(Of Trade) = GetSpecificTrades(currentMinuteCandlePayload, Trade.TradeType.MIS, Trade.TradeExecutionStatus.Inprogress)
@@ -1071,6 +1080,7 @@ Public Class GenericStrategy
                             instrumentName = tradingSymbol
                         End If
                         ret.Add(instrumentName, {dt.Rows(i).Item(5), dt.Rows(i).Item(5), dt.Rows(i).Item(3), dt.Rows(i).Item(4)})
+                        'ret.Add(instrumentName, {dt.Rows(i).Item(2), dt.Rows(i).Item(2), dt.Rows(i).Item(3), dt.Rows(i).Item(4)})
                         counter += 1
                         If counter = Me.NumberOfTradeableStockPerDay Then Exit For
                     End If
